@@ -94,12 +94,12 @@ const loaded = loadData();
 const db = {
     users: loaded.users,
     resources: [
-        { id: 1, title: 'Python 自动化脚本实战', desc: '学会使用 Python 提高工作效率，涵盖文件处理、网页爬取等。', category: '编程开发', icon: 'code-2', color: 'blue', students: '1.2k' },
-        { id: 2, title: 'Prompt Engineering 提示词工程', desc: '系统学习如何与 AI 对话，获得更精准的输出结果。', category: 'AI 技术', icon: 'brain-circuit', color: 'indigo', students: '3.5k' },
-        { id: 3, title: '现代 UI 设计原则', desc: '掌握配色、间距、排版等核心 UI 设计技巧。', category: '设计美学', icon: 'palette', color: 'purple', students: '890' },
-        { id: 4, title: 'SQL 数据库优化指南', desc: '深入浅出讲解数据库索引、查询优化与架构设计。', category: '后端技术', icon: 'database', color: 'emerald', students: '1.5k' },
-        { id: 5, title: 'TypeScript 高级用法', desc: '掌握泛型、类型体操等 TS 进阶技术。', category: '编程开发', icon: 'file-code', color: 'blue', students: '856' },
-        { id: 6, title: '大模型应用开发指南', desc: '基于 LangChain 的 LLM 应用实战手册。', category: 'AI 技术', icon: 'bot', color: 'orange', students: '1.2k' }
+        { id: 1, title: 'Python 自动化脚本实战', desc: '学会使用 Python 提高工作效率，涵盖文件处理、网页爬取等。', category: '编程开发', icon: 'terminal', emoji: '🐍', color: 'blue', students: '1.2k' },
+        { id: 2, title: 'Prompt Engineering 提示词工程', desc: '系统学习如何与 AI 对话，获得更精准的输出结果。', category: 'AI 技术', icon: 'messages-square', emoji: '🧠', color: 'indigo', students: '3.5k' },
+        { id: 3, title: '现代 UI 设计原则', desc: '掌握配色、间距、排版等核心 UI 设计技巧。', category: '设计美学', icon: 'palette', emoji: '🎨', color: 'purple', students: '890' },
+        { id: 4, title: 'SQL 数据库优化指南', desc: '深入浅出讲解数据库索引、查询优化与架构设计。', category: '后端技术', icon: 'database', emoji: '🗄️', color: 'emerald', students: '1.5k' },
+        { id: 5, title: 'TypeScript 高级用法', desc: '掌握泛型、类型体操等 TS 进阶技术。', category: '编程开发', icon: 'file-code', emoji: '🟦', color: 'blue', students: '856' },
+        { id: 6, title: '大模型应用开发指南', desc: '基于 LangChain 的 LLM 应用实战手册。', category: 'AI 技术', icon: 'bot', emoji: '🤖', color: 'orange', students: '1.2k' }
     ],
     learningPaths: [
         {

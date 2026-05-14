@@ -373,7 +373,7 @@ function renderResources(resources) {
     const html = resources.map(res => `
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group cursor-pointer">
             <div class="aspect-video bg-${res.color}-100 flex items-center justify-center relative">
-                <i data-lucide="${res.icon}" class="w-12 h-12 text-${res.color}-500"></i>
+                ${res.image ? `<img src="${res.image}" alt="" class="w-full h-full object-cover" />` : (res.emoji ? `<span class="text-5xl select-none">${res.emoji}</span>` : `<i data-lucide="${res.icon}" class="w-12 h-12 text-${res.color}-500"></i>`)}
                 <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
             </div>
             <div class="p-4">
@@ -525,6 +525,7 @@ function switchView(viewId) {
         loadLearningPaths();
     } else if (viewId === 'personal-space') {
         loadUserInfo();
+        loadDashboard();
     }
 
     // Set active nav style

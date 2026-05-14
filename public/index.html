@@ -569,67 +569,6 @@
                         </div>
                     </section>
 
-                    <!-- Section 2: Learning Path Tracking -->
-                    <section id="learning-path-tracker">
-                        <!-- Will be rendered by JS -->
-                    </section>
-
-                    <!-- Section 3: Personal Data Overview -->
-                    <section>
-                        <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-lg font-bold flex items-center gap-2">
-                                <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-500"></i>
-                                个人数据一览
-                            </h2>
-                        </div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-grid">
-                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-                                <p class="text-sm text-gray-500 mb-1">本周学习时长</p>
-                                <div class="flex items-end gap-2">
-                                    <span class="text-2xl font-bold" id="stat-weekly-hours">12.5</span>
-                                    <span class="text-xs text-gray-400 pb-1">小时</span>
-                                </div>
-                                <div class="mt-2 text-xs text-green-500 flex items-center gap-1">
-                                    <i data-lucide="trending-up" class="w-3 h-3"></i>
-                                    <span>较上周 +15%</span>
-                                </div>
-                            </div>
-                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-                                <p class="text-sm text-gray-500 mb-1">连续打卡</p>
-                                <div class="flex items-end gap-2">
-                                    <span class="text-2xl font-bold" id="stat-streak">7</span>
-                                    <span class="text-xs text-gray-400 pb-1">天</span>
-                                </div>
-                                <div class="mt-2 text-xs text-orange-500 flex items-center gap-1">
-                                    <i data-lucide="flame" class="w-3 h-3"></i>
-                                    <span>保持学习热度！</span>
-                                </div>
-                            </div>
-                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-                                <p class="text-sm text-gray-500 mb-1">累计完成课程</p>
-                                <div class="flex items-end gap-2">
-                                    <span class="text-2xl font-bold">24</span>
-                                    <span class="text-xs text-gray-400 pb-1">门</span>
-                                </div>
-                                <div class="mt-2 text-xs text-blue-500 flex items-center gap-1">
-                                    <i data-lucide="award" class="w-3 h-3"></i>
-                                    <span>超过 88% 用户</span>
-                                </div>
-                            </div>
-                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
-                                <p class="text-sm text-gray-500 mb-1">积分收益</p>
-                                <div class="flex items-end gap-2">
-                                    <span class="text-2xl font-bold" id="stat-points">1,280</span>
-                                    <span class="text-xs text-gray-400 pb-1">pts</span>
-                                </div>
-                                <div class="mt-2 text-xs text-purple-500 flex items-center gap-1">
-                                    <i data-lucide="gem" class="w-3 h-3"></i>
-                                    <span>可兑换会员权益</span>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
                     <!-- Section 4: Bottom Content Area (Resource List) -->
                     <section>
                         <div class="flex items-center justify-between mb-4">
@@ -885,6 +824,64 @@
                              </div>
                          </div>
                      </div>
+
+                    <section id="learning-path-tracker" class="mb-8">
+                    </section>
+
+                    <section class="mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-bold flex items-center gap-2">
+                                <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-500"></i>
+                                个人数据一览
+                            </h2>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="stats-grid">
+                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                                <p class="text-sm text-gray-500 mb-1">本周学习时长</p>
+                                <div class="flex items-end gap-2">
+                                    <span class="text-2xl font-bold" id="stat-weekly-hours">12.5</span>
+                                    <span class="text-xs text-gray-400 pb-1">小时</span>
+                                </div>
+                                <div class="mt-2 text-xs text-green-500 flex items-center gap-1">
+                                    <i data-lucide="trending-up" class="w-3 h-3"></i>
+                                    <span>较上周 +15%</span>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                                <p class="text-sm text-gray-500 mb-1">连续打卡</p>
+                                <div class="flex items-end gap-2">
+                                    <span class="text-2xl font-bold" id="stat-streak">7</span>
+                                    <span class="text-xs text-gray-400 pb-1">天</span>
+                                </div>
+                                <div class="mt-2 text-xs text-orange-500 flex items-center gap-1">
+                                    <i data-lucide="flame" class="w-3 h-3"></i>
+                                    <span>保持学习热度！</span>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                                <p class="text-sm text-gray-500 mb-1">累计完成课程</p>
+                                <div class="flex items-end gap-2">
+                                    <span class="text-2xl font-bold">24</span>
+                                    <span class="text-xs text-gray-400 pb-1">门</span>
+                                </div>
+                                <div class="mt-2 text-xs text-blue-500 flex items-center gap-1">
+                                    <i data-lucide="award" class="w-3 h-3"></i>
+                                    <span>超过 88% 用户</span>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                                <p class="text-sm text-gray-500 mb-1">积分收益</p>
+                                <div class="flex items-end gap-2">
+                                    <span class="text-2xl font-bold" id="stat-points">1,280</span>
+                                    <span class="text-xs text-gray-400 pb-1">pts</span>
+                                </div>
+                                <div class="mt-2 text-xs text-purple-500 flex items-center gap-1">
+                                    <i data-lucide="gem" class="w-3 h-3"></i>
+                                    <span>可兑换会员权益</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
                      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                          <div class="lg:col-span-2 space-y-8">
