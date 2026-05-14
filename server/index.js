@@ -10,6 +10,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -135,6 +136,50 @@ const db = {
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+
+function proxyJavaScript(remoteUrl) {
+    return (req, res) => {
+        const fetch = (urlStr, depth = 0) => {
+            if (depth > 5) {
+                res.status(508).end();
+                return;
+            }
+
+            let url;
+            try {
+                url = new URL(urlStr);
+            } catch {
+                res.status(502).end();
+                return;
+            }
+
+            const upstreamReq = https.get(url, (upstream) => {
+                const status = upstream.statusCode || 200;
+                const location = upstream.headers.location;
+                if (status >= 300 && status < 400 && location) {
+                    upstream.resume();
+                    const nextUrl = new URL(location, url).toString();
+                    fetch(nextUrl, depth + 1);
+                    return;
+                }
+
+                res.status(status);
+                res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+                upstream.pipe(res);
+            });
+
+            upstreamReq.on('error', () => {
+                if (!res.headersSent) res.status(502);
+                res.end();
+            });
+        };
+
+        fetch(remoteUrl);
+    };
+}
+
+app.get('/vendor/tailwindcss.js', proxyJavaScript('https://cdn.tailwindcss.com'));
+app.get('/vendor/lucide.js', proxyJavaScript('https://unpkg.com/lucide@latest'));
 
 // JWT认证中间件
 const authenticateToken = (req, res, next) => {
@@ -564,12 +609,25 @@ app.get('*', (req, res) => {
 
 // ==================== 启动服务器 ====================
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 智荐通服务器已启动`);
+const HOST = '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+    console.log(`\n🚀 智荐通服务器已启动`);
     console.log(`📍 本地访问: http://localhost:${PORT}`);
-    console.log(`📍 局域网访问: http://0.0.0.0:${PORT}`);
+    
+    // 获取局域网IP
+    const { networkInterfaces } = require('os');
+    const nets = networkInterfaces();
+    for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+            if (net.family === 'IPv4' && !net.internal) {
+                console.log(`📍 局域网访问: http://${net.address}:${PORT}`);
+            }
+        }
+    }
+    
     console.log(`📁 静态文件目录: ${path.join(__dirname, '../public')}`);
-    console.log(`💾 数据文件: ${DATA_FILE}`);
+    console.log(`💾 数据文件: ${DATA_FILE}\n`);
 });
 
 module.exports = app;
