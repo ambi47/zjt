@@ -19,42 +19,36 @@
             </linearGradient>
         </defs>
         <symbol id="dino-icon" viewBox="0 0 100 100">
+            <!-- Tail - long and elegant -->
+            <path d="M20 70 Q5 70 5 50 Q5 40 15 55" fill="#34d399" />
             <!-- Body - rounded cute shape -->
-            <ellipse cx="50" cy="62" rx="32" ry="26" fill="#34d399" />
-            <!-- Belly - light肚子 -->
-            <ellipse cx="50" cy="66" rx="22" ry="18" fill="#a7f3d0" />
-            <!-- Head - big round head -->
-            <circle cx="68" cy="38" r="24" fill="#34d399" />
-            <!-- Snout - cute round snout -->
-            <ellipse cx="82" cy="42" rx="12" ry="10" fill="#6ee7b7" />
-            <!-- Nostrils - tiny cute nostrils -->
-            <circle cx="86" cy="40" r="1.5" fill="#065f46" />
-            <circle cx="86" cy="45" r="1.5" fill="#065f46" />
+            <ellipse cx="45" cy="70" rx="30" ry="22" fill="#34d399" />
+            <!-- Belly - light -->
+            <ellipse cx="45" cy="74" rx="20" ry="14" fill="#a7f3d0" />
+            <!-- Neck - The signature long neck -->
+            <path d="M65 65 Q80 65 80 30" stroke="#34d399" stroke-width="18" fill="none" stroke-linecap="round" />
+            <!-- Head - small and cute -->
+            <ellipse cx="85" cy="25" rx="14" ry="11" fill="#34d399" />
+            <!-- Snout -->
+            <ellipse cx="94" cy="28" rx="6" ry="5" fill="#6ee7b7" />
+            <!-- Nostrils -->
+            <circle cx="96" cy="27" r="1" fill="#065f46" />
+            <circle cx="96" cy="30" r="1" fill="#065f46" />
             <!-- Eyes - big cute eyes -->
-            <ellipse cx="72" cy="34" rx="7" ry="8" fill="white" />
-            <circle cx="73" cy="35" r="4" fill="#1e1b4b" />
-            <circle cx="74.5" cy="33" r="1.5" fill="white" />
-            <!-- Blush - pink cheeks -->
-            <ellipse cx="78" cy="44" rx="4" ry="2.5" fill="#fda4af" opacity="0.6" />
-            <!-- Smile - happy curve -->
-            <path d="M78 48 Q82 52 88 50" stroke="#065f46" stroke-width="2" fill="none" stroke-linecap="round" />
-            <!-- Little ears -->
-            <ellipse cx="52" cy="20" rx="6" ry="8" fill="#34d399" />
-            <ellipse cx="52" cy="20" rx="3" ry="5" fill="#a7f3d0" />
-            <ellipse cx="84" cy="18" rx="6" ry="8" fill="#34d399" />
-            <ellipse cx="84" cy="18" rx="3" ry="5" fill="#a7f3d0" />
-            <!-- Tiny arms -->
-            <ellipse cx="32" cy="58" rx="8" ry="5" fill="#34d399" transform="rotate(-20 32 58)" />
-            <ellipse cx="68" cy="60" rx="8" ry="5" fill="#34d399" transform="rotate(20 68 60)" />
-            <!-- Tiny legs -->
-            <ellipse cx="38" cy="84" rx="8" ry="6" fill="#34d399" />
-            <ellipse cx="58" cy="84" rx="8" ry="6" fill="#34d399" />
-            <!-- Tail - cute short tail -->
-            <path d="M18 62 Q8 58 6 50 Q4 44 10 48 Q16 52 22 58" fill="#34d399" />
-            <!-- Spikes - tiny cute bumps -->
-            <circle cx="40" cy="38" r="3" fill="#6ee7b7" />
-            <circle cx="50" cy="36" r="3" fill="#6ee7b7" />
-            <circle cx="60" cy="38" r="3" fill="#6ee7b7" />
+            <ellipse cx="82" cy="22" rx="5" ry="6" fill="white" />
+            <circle cx="83" cy="23" r="3" fill="#1e1b4b" />
+            <circle cx="84" cy="22" r="1" fill="white" />
+            <!-- Blush -->
+            <ellipse cx="88" cy="30" rx="3" ry="2" fill="#fda4af" opacity="0.6" />
+            <!-- Legs -->
+            <rect x="30" y="85" width="8" height="10" rx="4" fill="#34d399" />
+            <rect x="52" y="85" width="8" height="10" rx="4" fill="#34d399" />
+            <!-- Spikes - along the back and neck -->
+            <circle cx="35" cy="52" r="3" fill="#6ee7b7" />
+            <circle cx="45" cy="48" r="3" fill="#6ee7b7" />
+            <circle cx="55" cy="48" r="3" fill="#6ee7b7" />
+            <circle cx="68" cy="52" r="3" fill="#6ee7b7" />
+            <circle cx="75" cy="40" r="3" fill="#6ee7b7" />
         </symbol>
     </svg>
     <style>
@@ -227,27 +221,6 @@
             0%, 100% { transform: translate(0, 0) scale(1); }
             50% { transform: translate(10px, -20px) scale(1.1); }
         }
-        /* ===== Password Strength Indicator ===== */
-        .password-strength {
-            display: flex;
-            gap: 4px;
-            margin-top: 6px;
-        }
-        .password-strength .strength-bar {
-            flex: 1;
-            height: 3px;
-            border-radius: 2px;
-            background: rgba(71, 85, 105, 0.5);
-            transition: background 0.3s;
-        }
-        .password-strength .strength-bar.active-weak { background: #ef4444; }
-        .password-strength .strength-bar.active-medium { background: #f59e0b; }
-        .password-strength .strength-bar.active-strong { background: #22c55e; }
-        .strength-text {
-            font-size: 11px;
-            margin-top: 4px;
-            color: #94a3b8;
-        }
         /* AI Chat Bubbles */
         .chat-bubble-ai {
             background: white;
@@ -259,7 +232,7 @@
             color: white;
             border-bottom-right-radius: 4px;
         }
-        /* Floating Mascot */
+        /* ===== Mascot Float ===== */
         .mascot-float {
             position: fixed;
             bottom: 2rem;
@@ -386,13 +359,6 @@
                             <a href="#" class="text-xs text-indigo-400 hover:underline">忘记密码？</a>
                         </div>
                         <input type="password" id="login-password" placeholder="请输入密码" class="auth-input" required>
-                        <div class="password-strength hidden" id="password-strength">
-                            <div id="strength-1" class="h-1 flex-1 rounded bg-gray-200"></div>
-                            <div id="strength-2" class="h-1 flex-1 rounded bg-gray-200"></div>
-                            <div id="strength-3" class="h-1 flex-1 rounded bg-gray-200"></div>
-                            <div id="strength-4" class="h-1 flex-1 rounded bg-gray-200"></div>
-                        </div>
-                        <p class="strength-text" id="strength-text"></p>
                     </div>
                     <div class="flex items-center gap-3">
                         <canvas id="captcha-canvas" width="120" height="40" class="rounded-lg border border-slate-600 cursor-pointer" title="点击刷新验证码"></canvas>
@@ -443,14 +409,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-300 mb-1">设置密码</label>
-                        <input type="password" id="reg-password" placeholder="至少 8 位字符" class="auth-input" required minlength="8">
-                        <div class="password-strength hidden" id="password-strength-reg">
-                            <div id="strength-reg-1" class="h-1 flex-1 rounded bg-gray-200"></div>
-                            <div id="strength-reg-2" class="h-1 flex-1 rounded bg-gray-200"></div>
-                            <div id="strength-reg-3" class="h-1 flex-1 rounded bg-gray-200"></div>
-                            <div id="strength-reg-4" class="h-1 flex-1 rounded bg-gray-200"></div>
-                        </div>
-                        <p class="strength-text" id="strength-text-reg"></p>
+                        <input type="password" id="reg-password" placeholder="请输入密码" class="auth-input" required>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-300 mb-1">兴趣标签（用逗号分隔）</label>
@@ -513,7 +472,7 @@
                     <span class="font-medium">个人空间</span>
                 </a>
                 <a href="#" onclick="switchView('ai-assistant')" id="nav-ai-assistant" class="flex items-center gap-3 px-3 py-2 text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-900 group transition-colors">
-                    <i data-lucide="bot" class="w-5 h-5"></i>
+                    <svg class="w-5 h-5"><use href="#dino-icon" /></svg>
                     <span class="font-medium">智能助理</span>
                 </a>
                 <a href="#" onclick="switchView('quick-access')" id="nav-quick-access" class="flex items-center gap-3 px-3 py-2 text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-900 group transition-colors">
