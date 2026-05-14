@@ -224,6 +224,14 @@ app.post('/api/auth/register', async (req, res) => {
             });
         }
 
+        // 密码强度校验
+        if (password.length < 8) {
+            return res.status(400).json({
+                code: 400,
+                message: '密码长度至少为8位'
+            });
+        }
+
         // 邮箱格式校验
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {

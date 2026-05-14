@@ -64,6 +64,48 @@ function generateCaptcha() {
     }
 }
 
+// ==================== 密码强度检测 ====================
+
+function checkPasswordStrength(password) {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+    return strength;
+}
+
+function updatePasswordStrength(password, suffix = '') {
+    const container = document.getElementById('password-strength' + suffix);
+    const text = document.getElementById('strength-text' + suffix);
+    if (!container) return;
+
+    if (!password) {
+        container.classList.add('hidden');
+        if (text) text.textContent = '';
+        return;
+    }
+
+    container.classList.remove('hidden');
+    const strength = checkPasswordStrength(password);
+
+    const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+    const texts = ['弱', '一般', '较强', '强'];
+    const textColors = ['text-red-500', 'text-orange-500', 'text-yellow-500', 'text-green-500'];
+
+    for (let i = 1; i <= 4; i++) {
+        const bar = document.getElementById(`strength${suffix}-${i}`);
+        if (bar) {
+            bar.className = `h-1 flex-1 rounded ${i <= strength ? colors[strength - 1] : 'bg-gray-200'}`;
+        }
+    }
+
+    if (text) {
+        text.textContent = `密码强度：${texts[strength - 1] || '太弱'}`;
+        text.className = `mt-1 ${textColors[strength - 1] || 'text-red-500'}`;
+    }
+}
+
 // ==================== API 请求工具 ====================
 
 async function apiRequest(endpoint, options = {}) {
@@ -175,6 +217,14 @@ async function handleRegister(event) {
     const errorDiv = document.getElementById('register-error');
 
     const interests = interestsStr.split(',').map(s => s.trim()).filter(s => s);
+
+    // 密码强度检查
+    const strength = checkPasswordStrength(password);
+    if (strength < 2) {
+        errorDiv.textContent = '密码强度太弱，请使用包含大小写字母、数字或特殊字符的密码';
+        errorDiv.classList.remove('hidden');
+        return;
+    }
 
     // 显示加载状态
     btn.disabled = true;
@@ -630,8 +680,8 @@ function addMessageToChat(message, sender) {
         </div>
     ` : `
         <div class="flex gap-4 max-w-3xl">
-            <div class="w-8 h-8 rounded-lg bg-[#0d2699] flex-shrink-0 flex items-center justify-center text-white shadow-md">
-                <svg class="w-5 h-5"><use href="#dino-icon"/></svg>
+            <div class="w-8 h-8 rounded-lg bg-[#0d2699] flex-shrink-0 flex items-center justify-center text-white shadow-md text-xl">
+                🦕
             </div>
             <div class="space-y-2">
                 <div class="chat-bubble-ai p-4 rounded-2xl shadow-sm text-sm leading-relaxed text-gray-700" style="white-space: pre-line;">${escapeHtml(message)}</div>
@@ -682,6 +732,14 @@ async function init() {
 
     // 初始化验证码
     generateCaptcha();
+
+    // 密码强度监听 - 注册页
+    const regPassword = document.getElementById('reg-password');
+    if (regPassword) {
+        regPassword.addEventListener('input', (e) => {
+            updatePasswordStrength(e.target.value, '-reg');
+        });
+    }
 
     // 绑定聊天输入框事件
     const chatInput = document.getElementById('chat-input');
