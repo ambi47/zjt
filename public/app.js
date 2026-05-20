@@ -421,7 +421,7 @@ function renderResources(resources) {
     const libraryGrid = document.getElementById('library-resource-grid');
 
     const html = resources.map(res => `
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group cursor-pointer">
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow group cursor-pointer" onclick="openResourceDetail(${res.id})">
             <div class="aspect-video bg-${res.color}-100 flex items-center justify-center relative">
                 ${res.image ? `<img src="${res.image}" alt="" class="w-full h-full object-cover" />` : (res.emoji ? `<span class="text-5xl select-none">${res.emoji}</span>` : `<i data-lucide="${res.icon}" class="w-12 h-12 text-${res.color}-500"></i>`)}
                 <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
@@ -441,6 +441,58 @@ function renderResources(resources) {
     if (libraryGrid) libraryGrid.innerHTML = html;
     lucide.createIcons();
 }
+
+async function openResourceDetail(id) {
+    try {
+        const response = await apiRequest(`/api/resource/${id}`);
+        if (response.code !== 200) return;
+
+        const data = response.data;
+        const overlay = document.getElementById('resource-modal-overlay');
+        if (!overlay) return;
+
+        const cover = document.getElementById('resource-modal-cover');
+        if (cover) {
+            if (data.image) {
+                cover.innerHTML = `<img src="${data.image}" alt="" class="w-full h-full object-cover rounded-xl" />`;
+            } else if (data.emoji) {
+                cover.innerHTML = `<span class="text-2xl">${data.emoji}</span>`;
+            } else if (data.icon) {
+                cover.innerHTML = `<i data-lucide="${data.icon}" class="w-5 h-5 text-gray-500"></i>`;
+            } else {
+                cover.innerHTML = '';
+            }
+        }
+
+        const title = document.getElementById('resource-modal-title');
+        if (title) title.textContent = data.title || '资源详情';
+        const meta = document.getElementById('resource-modal-meta');
+        if (meta) meta.textContent = data.id ? `#${data.id}` : '';
+        const desc = document.getElementById('resource-modal-desc');
+        if (desc) desc.textContent = data.desc || '';
+        const category = document.getElementById('resource-modal-category');
+        if (category) category.textContent = data.category || '';
+        const students = document.getElementById('resource-modal-students');
+        if (students) students.textContent = data.students ? `${data.students} 人学习` : '';
+
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+        lucide.createIcons();
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+function closeResourceModal(event) {
+    if (event && event.target !== event.currentTarget) return;
+    const overlay = document.getElementById('resource-modal-overlay');
+    if (!overlay) return;
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+}
+
+window.openResourceDetail = openResourceDetail;
+window.closeResourceModal = closeResourceModal;
 
 function renderRecommendations(data) {
     const grid = document.getElementById('recommendation-grid');

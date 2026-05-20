@@ -1127,6 +1127,30 @@
           </div>
       </div>
 
+      <div id="resource-modal-overlay" class="fixed inset-0 bg-black/40 hidden items-center justify-center p-4 z-50" onclick="closeResourceModal(event)">
+          <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden" onclick="event.stopPropagation()">
+              <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <div class="flex items-center gap-3 min-w-0">
+                      <div id="resource-modal-cover" class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0"></div>
+                      <div class="min-w-0">
+                          <h3 id="resource-modal-title" class="font-bold truncate">资源详情</h3>
+                          <p id="resource-modal-meta" class="text-xs text-gray-400 truncate"></p>
+                      </div>
+                  </div>
+                  <button class="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors" onclick="closeResourceModal()">
+                      <i data-lucide="x" class="w-5 h-5"></i>
+                  </button>
+              </div>
+              <div class="p-6 space-y-4">
+                  <p id="resource-modal-desc" class="text-sm text-gray-600 leading-relaxed"></p>
+                  <div class="flex flex-wrap gap-2">
+                      <span id="resource-modal-category" class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600"></span>
+                      <span id="resource-modal-students" class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600"></span>
+                  </div>
+              </div>
+          </div>
+      </div>
+
       <script>
           // ===== Avatar Modal Functions =====
           let selectedAvatarEmoji = null;
