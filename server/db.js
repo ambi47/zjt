@@ -267,6 +267,31 @@ async function listUsers() {
     return queryAll('SELECT id, username, email, role, level, learning_goal, points, learning_days, badges, created_at FROM users ORDER BY created_at DESC');
 }
 
+async function getSchema() {
+    await init();
+    const tables = queryAll(
+        "SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name ASC"
+    );
+
+    const enriched = tables.map((t) => {
+        const columns = queryAll(`PRAGMA table_info(${JSON.stringify(t.name)})`);
+        return {
+            name: t.name,
+            sql: t.sql,
+            columns: columns.map((c) => ({
+                cid: c.cid,
+                name: c.name,
+                type: c.type,
+                notnull: c.notnull,
+                dflt_value: c.dflt_value,
+                pk: c.pk
+            }))
+        };
+    });
+
+    return { tables: enriched };
+}
+
 async function getResourceById(id) {
     await init();
     return queryOne('SELECT * FROM resources WHERE id = ?', [id]);
@@ -296,6 +321,7 @@ module.exports = {
     updateResource,
     deleteResource,
     listUsers,
+    getSchema,
     getResourceById,
     listLearningPaths,
     listRecommendations

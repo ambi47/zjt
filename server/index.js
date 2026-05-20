@@ -572,6 +572,11 @@ app.delete('/api/admin/resources/:id', authenticateToken, requireAdmin, async (r
     res.json({ code: 200, message: '删除成功' });
 });
 
+app.get('/api/admin/db/schema', authenticateToken, requireAdmin, async (req, res) => {
+    const schema = await dbStore.getSchema();
+    res.json({ code: 200, message: '获取成功', data: schema });
+});
+
 // ==================== 前端路由处理 ====================
 
 // 所有其他路由返回index.html（单页应用支持）
