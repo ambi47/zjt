@@ -51,6 +51,11 @@ function saveIfReady() {
     fs.writeFileSync(DB_FILE, Buffer.from(data));
 }
 
+function hasColumn(tableName, columnName) {
+    const cols = queryAll(`PRAGMA table_info(${JSON.stringify(tableName)})`);
+    return cols.some((c) => c.name === columnName);
+}
+
 async function init() {
     if (db) return;
     SQL = await initSqlJs({ locateFile });
@@ -111,25 +116,475 @@ async function init() {
         );
     `);
 
-    const resourceCount = getFirst(db.exec('SELECT COUNT(*) AS c FROM resources')[0])?.c || 0;
-    if (resourceCount === 0) {
-        const now = new Date().toISOString();
-        const stmt = db.prepare('INSERT INTO resources (title, desc, category, icon, emoji, image, color, students, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        const seed = [
-            { title: 'Python 自动化脚本实战', desc: '学会使用 Python 提高工作效率，涵盖文件处理、网页爬取等。', category: '编程开发', icon: 'terminal', emoji: '🐍', color: 'blue', students: '1.2k' },
-            { title: 'Prompt Engineering 提示词工程', desc: '系统学习如何与 AI 对话，获得更精准的输出结果。', category: 'AI 技术', icon: 'messages-square', emoji: '🧠', color: 'indigo', students: '3.5k' },
-            { title: '现代 UI 设计原则', desc: '掌握配色、间距、排版等核心 UI 设计技巧。', category: '设计美学', icon: 'palette', emoji: '🎨', color: 'purple', students: '890' },
-            { title: 'SQL 数据库优化指南', desc: '深入浅出讲解数据库索引、查询优化与架构设计。', category: '后端技术', icon: 'database', emoji: '🗄️', color: 'emerald', students: '1.5k' },
-            { title: 'TypeScript 高级用法', desc: '掌握泛型、类型体操等 TS 进阶技术。', category: '编程开发', icon: 'file-code', emoji: '🟦', color: 'blue', students: '856' },
-            { title: '大模型应用开发指南', desc: '基于 LangChain 的 LLM 应用实战手册。', category: 'AI 技术', icon: 'bot', emoji: '🤖', color: 'orange', students: '1.2k' }
-        ];
-        seed.forEach((r) => stmt.run([r.title, r.desc, r.category, r.icon || null, r.emoji || null, r.image || null, r.color, r.students, now]));
-        stmt.free();
-    }
+    if (!hasColumn('resources', 'url')) db.run('ALTER TABLE resources ADD COLUMN url TEXT');
+    if (!hasColumn('resources', 'outline_json')) db.run("ALTER TABLE resources ADD COLUMN outline_json TEXT NOT NULL DEFAULT '[]'");
+    if (!hasColumn('resources', 'provider')) db.run('ALTER TABLE resources ADD COLUMN provider TEXT');
+    if (!hasColumn('resources', 'level')) db.run('ALTER TABLE resources ADD COLUMN level TEXT');
+    if (!hasColumn('resources', 'duration')) db.run('ALTER TABLE resources ADD COLUMN duration TEXT');
+
+    const now = new Date().toISOString();
+    const seedResources = [
+        {
+            title: 'HTML 入门到实践',
+            desc: '从语义化结构到表单与媒体标签，快速补齐网页结构基础。',
+            category: '前端基础',
+            icon: 'layout-template',
+            emoji: '🧱',
+            color: 'blue',
+            students: '6.8k',
+            url: 'https://developer.mozilla.org/zh-CN/docs/Learn/HTML',
+            provider: 'MDN',
+            level: '入门',
+            duration: '4-6 小时',
+            outline: [
+                { title: 'MDN：学习 HTML', url: 'https://developer.mozilla.org/zh-CN/docs/Learn/HTML' },
+                { title: 'MDN：HTML 元素参考', url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element' },
+                { title: 'MDN：表单基础', url: 'https://developer.mozilla.org/zh-CN/docs/Learn/Forms' }
+            ]
+        },
+        {
+            title: 'CSS 布局与响应式',
+            desc: '掌握 Flex/Grid、媒体查询与常见布局套路，做出自适应页面。',
+            category: '前端基础',
+            icon: 'columns-3',
+            emoji: '🧩',
+            color: 'indigo',
+            students: '7.4k',
+            url: 'https://developer.mozilla.org/zh-CN/docs/Learn/CSS',
+            provider: 'MDN',
+            level: '入门-进阶',
+            duration: '6-8 小时',
+            outline: [
+                { title: 'MDN：学习 CSS', url: 'https://developer.mozilla.org/zh-CN/docs/Learn/CSS' },
+                { title: 'MDN：Flexbox 指南', url: 'https://developer.mozilla.org/zh-CN/docs/Learn/CSS/CSS_layout/Flexbox' },
+                { title: 'MDN：Grid 指南', url: 'https://developer.mozilla.org/zh-CN/docs/Learn/CSS/CSS_layout/Grids' },
+                { title: 'MDN：媒体查询', url: 'https://developer.mozilla.org/zh-CN/docs/Web/CSS/Media_Queries/Using_media_queries' }
+            ]
+        },
+        {
+            title: 'JavaScript 核心语法与思维',
+            desc: '变量/函数/对象/数组/作用域/闭包/原型链，打牢 JS 根基。',
+            category: '编程开发',
+            icon: 'braces',
+            emoji: '🟨',
+            color: 'amber',
+            students: '9.1k',
+            url: 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Guide',
+            provider: 'MDN',
+            level: '入门-进阶',
+            duration: '8-12 小时',
+            outline: [
+                { title: 'MDN：JavaScript 指南', url: 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Guide' },
+                { title: 'MDN：表达式与运算符', url: 'https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Guide/Expressions_and_operators' },
+                { title: 'MDN：对象基础', url: 'https://developer.mozilla.org/zh-CN/docs/Learn/JavaScript/Objects' },
+                { title: 'javascript.info：现代 JS 教程', url: 'https://javascript.info/' }
+            ]
+        },
+        {
+            title: 'DOM 与事件实战',
+            desc: '学会选择元素、事件监听、表单处理、动态渲染，做出可交互页面。',
+            category: '前端实战',
+            icon: 'mouse-pointer-2',
+            emoji: '🖱️',
+            color: 'blue',
+            students: '5.3k',
+            url: 'https://developer.mozilla.org/zh-CN/docs/Web/API/Document_Object_Model',
+            provider: 'MDN',
+            level: '入门',
+            duration: '3-5 小时',
+            outline: [
+                { title: 'MDN：DOM 概览', url: 'https://developer.mozilla.org/zh-CN/docs/Web/API/Document_Object_Model' },
+                { title: 'MDN：事件介绍', url: 'https://developer.mozilla.org/zh-CN/docs/Learn/JavaScript/Building_blocks/Events' },
+                { title: 'MDN：事件目标与冒泡', url: 'https://developer.mozilla.org/zh-CN/docs/Learn/JavaScript/Building_blocks/Events#%E4%BA%8B%E4%BB%B6%E5%86%92%E6%B3%A1%E4%B8%8E%E6%8D%95%E8%8E%B7' }
+            ]
+        },
+        {
+            title: 'Fetch 与前后端联调',
+            desc: '掌握 fetch、JSON、错误处理与 Network 面板，提升联调效率。',
+            category: '全栈联调',
+            icon: 'radar',
+            emoji: '🔄',
+            color: 'emerald',
+            students: '4.9k',
+            url: 'https://developer.mozilla.org/zh-CN/docs/Web/API/Fetch_API',
+            provider: 'MDN',
+            level: '入门',
+            duration: '2-4 小时',
+            outline: [
+                { title: 'MDN：Fetch API', url: 'https://developer.mozilla.org/zh-CN/docs/Web/API/Fetch_API' },
+                { title: 'MDN：使用 Fetch', url: 'https://developer.mozilla.org/zh-CN/docs/Web/API/Fetch_API/Using_Fetch' },
+                { title: 'Chrome DevTools：Network 面板', url: 'https://developer.chrome.com/docs/devtools/network/' }
+            ]
+        },
+        {
+            title: 'Node.js 基础与模块系统',
+            desc: '理解事件循环、模块、npm、常用内置模块，打好后端基础。',
+            category: '后端技术',
+            icon: 'server',
+            emoji: '🧠',
+            color: 'indigo',
+            students: '6.1k',
+            url: 'https://nodejs.org/en/learn/getting-started/introduction-to-nodejs',
+            provider: 'Node.js',
+            level: '入门',
+            duration: '3-6 小时',
+            outline: [
+                { title: 'Node.js：入门介绍', url: 'https://nodejs.org/en/learn/getting-started/introduction-to-nodejs' },
+                { title: 'Node.js：模块系统', url: 'https://nodejs.org/api/modules.html' },
+                { title: 'Node.js：文件系统 fs', url: 'https://nodejs.org/api/fs.html' }
+            ]
+        },
+        {
+            title: 'Express 官方入门',
+            desc: '路由、中间件、静态资源、错误处理，快速搭一个可用 API。',
+            category: '后端技术',
+            icon: 'route',
+            emoji: '🧭',
+            color: 'blue',
+            students: '8.0k',
+            url: 'https://expressjs.com/en/starter/installing.html',
+            provider: 'Express',
+            level: '入门',
+            duration: '3-5 小时',
+            outline: [
+                { title: 'Express：安装与快速开始', url: 'https://expressjs.com/en/starter/installing.html' },
+                { title: 'Express：路由', url: 'https://expressjs.com/en/guide/routing.html' },
+                { title: 'Express：中间件', url: 'https://expressjs.com/en/guide/using-middleware.html' },
+                { title: 'Express：错误处理', url: 'https://expressjs.com/en/guide/error-handling.html' }
+            ]
+        },
+        {
+            title: 'RESTful API 设计清单',
+            desc: '理解资源、路径、方法、状态码与分页，写出规范接口。',
+            category: '后端技术',
+            icon: 'list-checks',
+            emoji: '📋',
+            color: 'emerald',
+            students: '3.7k',
+            url: 'https://developer.mozilla.org/zh-CN/docs/Glossary/REST',
+            provider: 'MDN',
+            level: '入门',
+            duration: '2-3 小时',
+            outline: [
+                { title: 'MDN：REST 术语', url: 'https://developer.mozilla.org/zh-CN/docs/Glossary/REST' },
+                { title: 'MDN：HTTP 状态码', url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status' },
+                { title: 'MDN：HTTP 方法', url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Methods' }
+            ]
+        },
+        {
+            title: 'SQL 基础（查询/排序/聚合）',
+            desc: 'SELECT、WHERE、GROUP BY、JOIN，写出你后台需要的查询。',
+            category: '数据库',
+            icon: 'database',
+            emoji: '🗄️',
+            color: 'emerald',
+            students: '7.0k',
+            url: 'https://www.sqlitetutorial.net/sqlite-select/',
+            provider: 'SQLite Tutorial',
+            level: '入门',
+            duration: '4-6 小时',
+            outline: [
+                { title: 'SQLite SELECT', url: 'https://www.sqlitetutorial.net/sqlite-select/' },
+                { title: 'SQLite WHERE', url: 'https://www.sqlitetutorial.net/sqlite-where/' },
+                { title: 'SQLite JOIN', url: 'https://www.sqlitetutorial.net/sqlite-join/' },
+                { title: 'SQLite GROUP BY', url: 'https://www.sqlitetutorial.net/sqlite-group-by/' }
+            ]
+        },
+        {
+            title: 'SQLite 官方文档速查',
+            desc: '了解 SQLite 的数据类型、约束、PRAGMA 与常用语法。',
+            category: '数据库',
+            icon: 'book-open',
+            emoji: '📚',
+            color: 'indigo',
+            students: '2.9k',
+            url: 'https://www.sqlite.org/docs.html',
+            provider: 'SQLite',
+            level: '入门-进阶',
+            duration: '随用随查',
+            outline: [
+                { title: 'SQLite 文档索引', url: 'https://www.sqlite.org/docs.html' },
+                { title: 'SQLite 数据类型', url: 'https://www.sqlite.org/datatype3.html' },
+                { title: 'SQLite CREATE TABLE', url: 'https://www.sqlite.org/lang_createtable.html' },
+                { title: 'SQLite PRAGMA', url: 'https://www.sqlite.org/pragma.html' }
+            ]
+        },
+        {
+            title: 'Git 基础与协作流程',
+            desc: '学会 add/commit/pull --rebase/branch，团队协作更顺畅。',
+            category: '工程协作',
+            icon: 'git-branch',
+            emoji: '🌿',
+            color: 'orange',
+            students: '8.6k',
+            url: 'https://git-scm.com/book/zh/v2',
+            provider: 'Pro Git',
+            level: '入门',
+            duration: '6-10 小时',
+            outline: [
+                { title: 'Pro Git（中文）', url: 'https://git-scm.com/book/zh/v2' },
+                { title: '分支基础', url: 'https://git-scm.com/book/zh/v2/Git-%E5%88%86%E6%94%AF-%E5%88%86%E6%94%AF%E7%AE%80%E4%BB%8B' },
+                { title: '远程协作', url: 'https://git-scm.com/book/zh/v2/Git-%E5%9C%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A-Git-%E8%BF%9C%E7%A8%8B%E4%BB%93%E5%BA%93' }
+            ]
+        },
+        {
+            title: 'GitHub 使用速成',
+            desc: '仓库、PR、Issues、协作者、README 规范，一次搞懂。',
+            category: '工程协作',
+            icon: 'github',
+            emoji: '🐙',
+            color: 'gray',
+            students: '5.5k',
+            url: 'https://docs.github.com/zh',
+            provider: 'GitHub Docs',
+            level: '入门',
+            duration: '2-4 小时',
+            outline: [
+                { title: 'GitHub Docs（中文）', url: 'https://docs.github.com/zh' },
+                { title: '协作与拉取请求', url: 'https://docs.github.com/zh/pull-requests' },
+                { title: 'Issues 与项目管理', url: 'https://docs.github.com/zh/issues' }
+            ]
+        },
+        {
+            title: 'HTTP 基础与常见问题',
+            desc: '请求/响应、缓存、Cookie、CORS，解决联调疑难杂症。',
+            category: '网络基础',
+            icon: 'globe',
+            emoji: '🌐',
+            color: 'blue',
+            students: '6.2k',
+            url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTTP',
+            provider: 'MDN',
+            level: '入门',
+            duration: '4-6 小时',
+            outline: [
+                { title: 'MDN：HTTP 概览', url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTTP' },
+                { title: 'MDN：HTTP 头', url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers' },
+                { title: 'MDN：缓存', url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Caching' },
+                { title: 'MDN：CORS', url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CORS' }
+            ]
+        },
+        {
+            title: 'JWT 登录鉴权原理',
+            desc: '理解 token 结构、签名、过期与常见安全注意事项。',
+            category: '安全与鉴权',
+            icon: 'key-round',
+            emoji: '🔐',
+            color: 'indigo',
+            students: '4.1k',
+            url: 'https://jwt.io/introduction',
+            provider: 'jwt.io',
+            level: '入门',
+            duration: '1-2 小时',
+            outline: [
+                { title: 'JWT 介绍', url: 'https://jwt.io/introduction' },
+                { title: 'MDN：Authorization 头', url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Authorization' }
+            ]
+        },
+        {
+            title: 'Web 安全基础（OWASP Top 10）',
+            desc: '了解常见漏洞与防护点，写后端更安心。',
+            category: '安全与鉴权',
+            icon: 'shield-check',
+            emoji: '🛡️',
+            color: 'emerald',
+            students: '3.3k',
+            url: 'https://owasp.org/www-project-top-ten/',
+            provider: 'OWASP',
+            level: '入门',
+            duration: '2-4 小时',
+            outline: [
+                { title: 'OWASP Top 10', url: 'https://owasp.org/www-project-top-ten/' },
+                { title: 'MDN：XSS', url: 'https://developer.mozilla.org/zh-CN/docs/Glossary/Cross-site_scripting' },
+                { title: 'MDN：CSRF', url: 'https://developer.mozilla.org/zh-CN/docs/Glossary/CSRF' }
+            ]
+        },
+        {
+            title: 'Chrome DevTools 调试技巧',
+            desc: '断点、Network、Console、性能分析，定位问题更快。',
+            category: '开发效率',
+            icon: 'bug',
+            emoji: '🐞',
+            color: 'orange',
+            students: '5.9k',
+            url: 'https://developer.chrome.com/docs/devtools/',
+            provider: 'Chrome',
+            level: '入门',
+            duration: '2-4 小时',
+            outline: [
+                { title: 'DevTools 总览', url: 'https://developer.chrome.com/docs/devtools/' },
+                { title: 'Console', url: 'https://developer.chrome.com/docs/devtools/console/' },
+                { title: 'Network', url: 'https://developer.chrome.com/docs/devtools/network/' },
+                { title: 'Sources（断点调试）', url: 'https://developer.chrome.com/docs/devtools/javascript/' }
+            ]
+        },
+        {
+            title: 'Tailwind CSS 官方快速上手',
+            desc: '用实用类快速搭 UI，配合你们项目的 Tailwind 风格。',
+            category: '前端实战',
+            icon: 'sparkles',
+            emoji: '✨',
+            color: 'cyan',
+            students: '7.2k',
+            url: 'https://tailwindcss.com/docs/installation',
+            provider: 'Tailwind',
+            level: '入门',
+            duration: '2-4 小时',
+            outline: [
+                { title: '安装与使用', url: 'https://tailwindcss.com/docs/installation' },
+                { title: '常用样式速查', url: 'https://tailwindcss.com/docs' },
+                { title: '布局与 Flex', url: 'https://tailwindcss.com/docs/flex' },
+                { title: 'Grid', url: 'https://tailwindcss.com/docs/grid-template-columns' }
+            ]
+        },
+        {
+            title: 'Python 自动化脚本实战',
+            desc: '学会使用 Python 提高工作效率，涵盖文件处理、网络请求等。',
+            category: '编程开发',
+            icon: 'terminal',
+            emoji: '🐍',
+            color: 'blue',
+            students: '1.2k',
+            url: 'https://docs.python.org/zh-cn/3/tutorial/',
+            provider: 'Python Docs',
+            level: '入门',
+            duration: '6-10 小时',
+            outline: [
+                { title: 'Python 教程（中文）', url: 'https://docs.python.org/zh-cn/3/tutorial/' },
+                { title: '标准库：os', url: 'https://docs.python.org/zh-cn/3/library/os.html' },
+                { title: '标准库：pathlib', url: 'https://docs.python.org/zh-cn/3/library/pathlib.html' },
+                { title: '标准库：urllib', url: 'https://docs.python.org/zh-cn/3/library/urllib.html' }
+            ]
+        },
+        {
+            title: 'Prompt Engineering 提示词工程',
+            desc: '学习清晰表达需求、约束输出格式，提高 AI 产出质量。',
+            category: 'AI 技术',
+            icon: 'messages-square',
+            emoji: '🧠',
+            color: 'indigo',
+            students: '3.5k',
+            url: 'https://www.promptingguide.ai/zh',
+            provider: 'Prompting Guide',
+            level: '入门',
+            duration: '2-4 小时',
+            outline: [
+                { title: '提示词工程指南（中文）', url: 'https://www.promptingguide.ai/zh' },
+                { title: '提示词技巧', url: 'https://www.promptingguide.ai/zh/techniques' }
+            ]
+        },
+        {
+            title: '现代 UI 设计原则',
+            desc: '掌握信息层级、排版、间距与一致性，让页面更“像产品”。',
+            category: '设计美学',
+            icon: 'palette',
+            emoji: '🎨',
+            color: 'purple',
+            students: '890',
+            url: 'https://www.refactoringui.com/',
+            provider: 'Refactoring UI',
+            level: '入门',
+            duration: '随用随查',
+            outline: [
+                { title: 'Refactoring UI（主页）', url: 'https://www.refactoringui.com/' }
+            ]
+        },
+        {
+            title: 'SQL 数据库优化指南',
+            desc: '索引、查询优化与建表设计，让后台更快更稳。',
+            category: '后端技术',
+            icon: 'database',
+            emoji: '🗄️',
+            color: 'emerald',
+            students: '1.5k',
+            url: 'https://www.sqlite.org/queryplanner.html',
+            provider: 'SQLite',
+            level: '进阶',
+            duration: '2-4 小时',
+            outline: [
+                { title: 'SQLite 查询规划器', url: 'https://www.sqlite.org/queryplanner.html' },
+                { title: 'SQLite EXPLAIN', url: 'https://www.sqlite.org/lang_explain.html' },
+                { title: 'SQLite 索引', url: 'https://www.sqlite.org/lang_createindex.html' }
+            ]
+        },
+        {
+            title: 'TypeScript 高级用法',
+            desc: '泛型、类型收窄、工具类型，写更可靠的前端代码。',
+            category: '编程开发',
+            icon: 'file-code',
+            emoji: '🟦',
+            color: 'blue',
+            students: '856',
+            url: 'https://www.typescriptlang.org/docs/',
+            provider: 'TypeScript',
+            level: '进阶',
+            duration: '6-10 小时',
+            outline: [
+                { title: 'TypeScript Handbook', url: 'https://www.typescriptlang.org/docs/' },
+                { title: 'Utility Types', url: 'https://www.typescriptlang.org/docs/handbook/utility-types.html' }
+            ]
+        },
+        {
+            title: 'Postman API 测试入门',
+            desc: '学会用 Postman/Collection 测接口，联调效率翻倍。',
+            category: '全栈联调',
+            icon: 'send',
+            emoji: '📮',
+            color: 'orange',
+            students: '3.9k',
+            url: 'https://learning.postman.com/',
+            provider: 'Postman',
+            level: '入门',
+            duration: '2-3 小时',
+            outline: [
+                { title: 'Postman Learning Center', url: 'https://learning.postman.com/' },
+                { title: '发送请求与环境变量', url: 'https://learning.postman.com/docs/sending-requests/requests/' }
+            ]
+        }
+    ];
+
+    const existingTitleRows = queryAll('SELECT title FROM resources');
+    const existingTitles = new Set(existingTitleRows.map((r) => r.title));
+    const insertStmt = db.prepare(
+        'INSERT INTO resources (title, desc, category, icon, emoji, image, color, students, url, outline_json, provider, level, duration, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    const updateStmt = db.prepare(
+        'UPDATE resources SET url = ?, outline_json = ?, provider = ?, level = ?, duration = ? WHERE title = ?'
+    );
+    seedResources.forEach((r) => {
+        const outlineJson = JSON.stringify(r.outline || []);
+        if (!existingTitles.has(r.title)) {
+            insertStmt.run([
+                r.title,
+                r.desc,
+                r.category,
+                r.icon || null,
+                r.emoji || null,
+                r.image || null,
+                r.color,
+                r.students,
+                r.url || null,
+                outlineJson,
+                r.provider || null,
+                r.level || null,
+                r.duration || null,
+                now
+            ]);
+            return;
+        }
+
+        const existing = queryOne('SELECT url, outline_json FROM resources WHERE title = ?', [r.title]);
+        const hasUrl = existing && existing.url && String(existing.url).trim().length > 0;
+        const hasOutline = existing && existing.outline_json && String(existing.outline_json).trim() !== '[]';
+        if (!hasUrl && !hasOutline) {
+            updateStmt.run([r.url || null, outlineJson, r.provider || null, r.level || null, r.duration || null, r.title]);
+        }
+    });
+    insertStmt.free();
+    updateStmt.free();
 
     const pathCount = getFirst(db.exec('SELECT COUNT(*) AS c FROM learning_paths')[0])?.c || 0;
     if (pathCount === 0) {
-        const now = new Date().toISOString();
         const stmt = db.prepare('INSERT INTO learning_paths (title, stage, status, progress, items_json, created_at) VALUES (?, ?, ?, ?, ?, ?)');
         const seed = [
             { title: '前端基础与工程化', stage: 1, status: 'completed', progress: 100, items: ['HTML5/CSS3 进阶', 'ES6+ 核心语法', 'Webpack/Vite 工具'] },
@@ -142,7 +597,6 @@ async function init() {
 
     const recCount = getFirst(db.exec("SELECT COUNT(*) AS c FROM recommendations")[0])?.c || 0;
     if (recCount === 0) {
-        const now = new Date().toISOString();
         const stmt = db.prepare('INSERT INTO recommendations (scope, title, desc, category, color, icon, students, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
         const seed = [
             { scope: 'personal', title: '机器学习在金融领域的应用', desc: '深入探讨如何利用 AI 模型进行股票预测、风险评估及反欺诈分析。', category: '基于你的兴趣', color: 'blue', icon: 'brain', students: '4.8k' },
@@ -222,10 +676,15 @@ async function createResource(payload) {
     const image = payload.image || null;
     const color = payload.color || 'blue';
     const students = payload.students || '0';
+    const url = payload.url || null;
+    const outline_json = payload.outline ? JSON.stringify(payload.outline) : (payload.outline_json || '[]');
+    const provider = payload.provider || null;
+    const level = payload.level || null;
+    const duration = payload.duration || null;
 
     db.run(
-        'INSERT INTO resources (title, desc, category, icon, emoji, image, color, students, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [title, desc, category, icon, emoji, image, color, students, now]
+        'INSERT INTO resources (title, desc, category, icon, emoji, image, color, students, url, outline_json, provider, level, duration, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [title, desc, category, icon, emoji, image, color, students, url, outline_json, provider, level, duration, now]
     );
     const row = queryOne('SELECT last_insert_rowid() AS id');
     saveIfReady();
@@ -245,12 +704,17 @@ async function updateResource(id, patch = {}) {
         emoji: patch.emoji ?? existing.emoji,
         image: patch.image ?? existing.image,
         color: patch.color ?? existing.color,
-        students: patch.students ?? existing.students
+        students: patch.students ?? existing.students,
+        url: patch.url ?? existing.url,
+        outline_json: patch.outline ? JSON.stringify(patch.outline) : (patch.outline_json ?? existing.outline_json ?? '[]'),
+        provider: patch.provider ?? existing.provider,
+        level: patch.level ?? existing.level,
+        duration: patch.duration ?? existing.duration
     };
 
     db.run(
-        'UPDATE resources SET title = ?, desc = ?, category = ?, icon = ?, emoji = ?, image = ?, color = ?, students = ? WHERE id = ?',
-        [next.title, next.desc, next.category, next.icon, next.emoji, next.image, next.color, next.students, id]
+        'UPDATE resources SET title = ?, desc = ?, category = ?, icon = ?, emoji = ?, image = ?, color = ?, students = ?, url = ?, outline_json = ?, provider = ?, level = ?, duration = ? WHERE id = ?',
+        [next.title, next.desc, next.category, next.icon, next.emoji, next.image, next.color, next.students, next.url, next.outline_json, next.provider, next.level, next.duration, id]
     );
     saveIfReady();
     return await getResourceById(id);

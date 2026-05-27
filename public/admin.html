@@ -148,6 +148,18 @@
                         </table>
                     </div>
                 </section>
+
+                <section class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold">数据库结构（调试）</h2>
+                        <button id="refresh-db-schema" class="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-semibold hover:bg-gray-50 flex items-center gap-2">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            刷新
+                        </button>
+                    </div>
+                    <div id="db-schema-error" class="text-sm text-red-600 hidden"></div>
+                    <div id="db-schema-container" class="space-y-4"></div>
+                </section>
             </div>
         </main>
     </div>

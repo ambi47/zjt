@@ -77,6 +77,63 @@ function renderUsers(items) {
     `).join('');
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function renderDbSchema(schema) {
+    const container = document.getElementById('db-schema-container');
+    if (!container) return;
+
+    const tables = schema?.tables || [];
+    if (!tables.length) {
+        container.innerHTML = `<div class="text-sm text-gray-500">暂无表</div>`;
+        return;
+    }
+
+    container.innerHTML = tables.map((t) => {
+        const cols = t.columns || [];
+        return `
+            <div class="border border-gray-100 rounded-2xl p-5 bg-gray-50">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="font-extrabold text-gray-900">${escapeHtml(t.name)}</div>
+                    <div class="text-xs text-gray-400 font-bold">${cols.length} 列</div>
+                </div>
+                <div class="mt-2 text-xs text-gray-500 whitespace-pre-wrap break-words">${escapeHtml(t.sql || '')}</div>
+                <div class="mt-4 overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-400">
+                                <th class="py-2 pr-3">字段</th>
+                                <th class="py-2 pr-3">类型</th>
+                                <th class="py-2 pr-3">NOT NULL</th>
+                                <th class="py-2 pr-3">默认值</th>
+                                <th class="py-2 pr-3">主键</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            ${cols.map((c) => `
+                                <tr>
+                                    <td class="py-2 pr-3 font-semibold text-gray-800">${escapeHtml(c.name)}</td>
+                                    <td class="py-2 pr-3 text-gray-600">${escapeHtml(c.type)}</td>
+                                    <td class="py-2 pr-3 text-gray-600">${c.notnull ? 'YES' : 'NO'}</td>
+                                    <td class="py-2 pr-3 text-gray-600">${escapeHtml(c.dflt_value ?? '-')}</td>
+                                    <td class="py-2 pr-3 text-gray-600">${c.pk ? 'YES' : 'NO'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 async function refreshResources() {
     const res = await apiRequest('/api/admin/resources');
     setText('stat-resources', res.data.total);
@@ -87,6 +144,12 @@ async function refreshUsers() {
     const res = await apiRequest('/api/admin/users');
     setText('stat-users', res.data.total);
     renderUsers(res.data.items || []);
+}
+
+async function refreshDbSchema() {
+    hide('db-schema-error');
+    const res = await apiRequest('/api/admin/db/schema');
+    renderDbSchema(res.data);
 }
 
 async function login(username, password) {
@@ -137,6 +200,15 @@ async function bootstrap() {
     hide('admin-login');
     show('admin-panel');
     await Promise.all([refreshUsers(), refreshResources()]);
+    try {
+        await refreshDbSchema();
+    } catch (err) {
+        const el = document.getElementById('db-schema-error');
+        if (el) {
+            el.textContent = err.message || '获取失败';
+            el.classList.remove('hidden');
+        }
+    }
 }
 
 document.getElementById('admin-login-form')?.addEventListener('submit', async (e) => {
@@ -171,6 +243,17 @@ document.getElementById('resource-create-form')?.addEventListener('submit', asyn
 
 document.getElementById('refresh-resources')?.addEventListener('click', refreshResources);
 document.getElementById('refresh-users')?.addEventListener('click', refreshUsers);
+document.getElementById('refresh-db-schema')?.addEventListener('click', async () => {
+    try {
+        await refreshDbSchema();
+    } catch (err) {
+        const el = document.getElementById('db-schema-error');
+        if (el) {
+            el.textContent = err.message || '获取失败';
+            el.classList.remove('hidden');
+        }
+    }
+});
 
 document.getElementById('admin-logout')?.addEventListener('click', () => {
     adminState.token = null;

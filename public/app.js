@@ -328,7 +328,7 @@ async function loadDashboard() {
 
 async function loadResources() {
     try {
-        const response = await apiRequest('/api/resource/list');
+        const response = await apiRequest('/api/resource/list?limit=50');
         if (response.code === 200) {
             appState.resources = response.data.items;
             renderResources(appState.resources);
@@ -474,6 +474,75 @@ async function openResourceDetail(id) {
         if (category) category.textContent = data.category || '';
         const students = document.getElementById('resource-modal-students');
         if (students) students.textContent = data.students ? `${data.students} 人学习` : '';
+
+        const link = document.getElementById('resource-modal-link');
+        if (link) {
+            const url = (data.url || '').trim();
+            if (url) {
+                link.href = url;
+                link.classList.remove('hidden');
+            } else {
+                link.removeAttribute('href');
+                link.classList.add('hidden');
+            }
+        }
+
+        const outlineWrap = document.getElementById('resource-modal-outline');
+        const outlineList = document.getElementById('resource-modal-outline-list');
+        if (outlineWrap && outlineList) {
+            let items = [];
+            try {
+                items = JSON.parse(data.outline_json || '[]') || [];
+            } catch {
+                items = [];
+            }
+            const valid = Array.isArray(items) ? items.filter((x) => x && (x.title || x.url)) : [];
+            if (valid.length) {
+                outlineList.innerHTML = '';
+                valid.forEach((it) => {
+                    const titleText = String(it.title || it.url || '').trim();
+                    const url = String(it.url || '').trim();
+                    if (url) {
+                        const a = document.createElement('a');
+                        a.className = 'block px-3 py-2 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50 transition-colors';
+                        a.href = url;
+                        a.target = '_blank';
+                        a.rel = 'noopener';
+
+                        const row = document.createElement('div');
+                        row.className = 'flex items-center justify-between gap-3';
+
+                        const t = document.createElement('div');
+                        t.className = 'text-sm font-semibold text-gray-800 truncate';
+                        t.textContent = titleText;
+
+                        const icon = document.createElement('i');
+                        icon.setAttribute('data-lucide', 'external-link');
+                        icon.className = 'w-4 h-4 text-gray-400 flex-shrink-0';
+
+                        row.appendChild(t);
+                        row.appendChild(icon);
+                        a.appendChild(row);
+                        outlineList.appendChild(a);
+                        return;
+                    }
+
+                    const box = document.createElement('div');
+                    box.className = 'px-3 py-2 rounded-xl border border-gray-100 bg-gray-50';
+
+                    const t = document.createElement('div');
+                    t.className = 'text-sm font-semibold text-gray-800';
+                    t.textContent = titleText;
+
+                    box.appendChild(t);
+                    outlineList.appendChild(box);
+                });
+                outlineWrap.classList.remove('hidden');
+            } else {
+                outlineList.innerHTML = '';
+                outlineWrap.classList.add('hidden');
+            }
+        }
 
         overlay.classList.remove('hidden');
         overlay.classList.add('flex');
