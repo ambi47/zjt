@@ -680,6 +680,12 @@ function switchView(viewId) {
         }
     });
 
+    // 重置智能助理图标为默认状态
+    const aiIcon = document.getElementById('ai-assistant-icon');
+    if (aiIcon) {
+        aiIcon.src = '/resource/logo_ai_side_default.png';
+    }
+
     // Show target view
     const targetView = document.getElementById(viewId + '-view');
     if (targetView) targetView.classList.remove('view-hidden');
@@ -704,6 +710,11 @@ function switchView(viewId) {
     if (targetNav) {
         targetNav.classList.add('bg-blue-50', 'text-blue-700');
         targetNav.classList.remove('text-gray-500', 'hover:bg-gray-100', 'hover:text-gray-900');
+        
+        // 如果选中的是智能助理，切换为选中状态图标
+        if (viewId === 'ai-assistant' && aiIcon) {
+            aiIcon.src = '/resource/logo_ai_side_choose.png';
+        }
     }
 
     // Handle mascot visibility

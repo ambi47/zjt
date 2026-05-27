@@ -501,7 +501,7 @@
                 </a>
                 <a href="#" onclick="switchView('ai-assistant')" id="nav-ai-assistant" class="flex items-center gap-3 px-3 py-2 text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-900 group transition-colors">
                     <div class="w-5 h-5">
-                        <img src="/resource/logo_ai.png" alt="AI助理" class="w-full h-full object-contain">
+                        <img id="ai-assistant-icon" src="/resource/logo_ai_side_default.png" alt="AI助理" class="w-full h-full object-contain">
                     </div>
                     <span class="font-medium">智能助理</span>
                 </a>
@@ -1304,6 +1304,28 @@
           // 页面加载后恢复头像
           document.addEventListener('DOMContentLoaded', function() {
               restoreAvatar();
+          });
+      </script>
+      <script>
+          // 智能助理图标悬停和选中状态处理
+          document.addEventListener('DOMContentLoaded', function() {
+              const aiNav = document.getElementById('nav-ai-assistant');
+              const aiIcon = document.getElementById('ai-assistant-icon');
+              
+              if (aiNav && aiIcon) {
+                  // 悬停状态
+                  aiNav.addEventListener('mouseenter', function() {
+                      if (!aiNav.classList.contains('bg-blue-50')) {
+                          aiIcon.src = '/resource/logo_ai_side_hover.png';
+                      }
+                  });
+                  
+                  aiNav.addEventListener('mouseleave', function() {
+                      if (!aiNav.classList.contains('bg-blue-50')) {
+                          aiIcon.src = '/resource/logo_ai_side_default.png';
+                      }
+                  });
+              }
           });
       </script>
       <script src="app.js"></script>
