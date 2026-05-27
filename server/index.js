@@ -9,48 +9,13 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-const fs = require('fs');
 const https = require('https');
+const dbStore = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SECRET_KEY = 'your-super-secret-key-change-in-production';
 const TOKEN_EXPIRY = '24h';
-
-// 数据文件路径
-const DATA_FILE = path.join(__dirname, 'data.json');
-
-// ==================== 数据持久化 ====================
-
-function loadData() {
-    try {
-        if (fs.existsSync(DATA_FILE)) {
-            const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-            // 将普通对象转换为Map
-            const usersMap = new Map();
-            if (data.users) {
-                Object.entries(data.users).forEach(([key, value]) => {
-                    usersMap.set(key, value);
-                });
-            }
-            return { users: usersMap };
-        }
-    } catch (error) {
-        console.error('加载数据失败:', error);
-    }
-    return { users: new Map() };
-}
-
-function saveData() {
-    try {
-        const data = {
-            users: Object.fromEntries(db.users)
-        };
-        fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    } catch (error) {
-        console.error('保存数据失败:', error);
-    }
-}
 
 // ==================== 安全模块：登录失败次数限制 ====================
 
@@ -89,47 +54,7 @@ function clearLoginAttempts(username) {
 }
 
 // ==================== 数据库 ====================
-
-const loaded = loadData();
-const db = {
-    users: loaded.users,
-    resources: [
-        { id: 1, title: 'Python 自动化脚本实战', desc: '学会使用 Python 提高工作效率，涵盖文件处理、网页爬取等。', category: '编程开发', icon: 'terminal', emoji: '🐍', color: 'blue', students: '1.2k' },
-        { id: 2, title: 'Prompt Engineering 提示词工程', desc: '系统学习如何与 AI 对话，获得更精准的输出结果。', category: 'AI 技术', icon: 'messages-square', emoji: '🧠', color: 'indigo', students: '3.5k' },
-        { id: 3, title: '现代 UI 设计原则', desc: '掌握配色、间距、排版等核心 UI 设计技巧。', category: '设计美学', icon: 'palette', emoji: '🎨', color: 'purple', students: '890' },
-        { id: 4, title: 'SQL 数据库优化指南', desc: '深入浅出讲解数据库索引、查询优化与架构设计。', category: '后端技术', icon: 'database', emoji: '🗄️', color: 'emerald', students: '1.5k' },
-        { id: 5, title: 'TypeScript 高级用法', desc: '掌握泛型、类型体操等 TS 进阶技术。', category: '编程开发', icon: 'file-code', emoji: '🟦', color: 'blue', students: '856' },
-        { id: 6, title: '大模型应用开发指南', desc: '基于 LangChain 的 LLM 应用实战手册。', category: 'AI 技术', icon: 'bot', emoji: '🤖', color: 'orange', students: '1.2k' }
-    ],
-    learningPaths: [
-        {
-            id: 1,
-            title: '前端基础与工程化',
-            stage: 1,
-            status: 'completed',
-            items: ['HTML5/CSS3 进阶', 'ES6+ 核心语法', 'Webpack/Vite 工具']
-        },
-        {
-            id: 2,
-            title: 'React 实战进阶',
-            stage: 2,
-            status: 'in_progress',
-            progress: 65,
-            items: ['Hooks 深度解析', '状态管理实战', 'React 性能优化']
-        },
-        {
-            id: 3,
-            title: 'Node.js 后端开发',
-            stage: 3,
-            status: 'pending',
-            items: ['Express 基础', '数据库操作', 'RESTful API 设计']
-        }
-    ],
-    recommendations: [
-        { id: 1, title: '机器学习在金融领域的应用', desc: '深入探讨如何利用 AI 模型进行股票预测、风险评估及反欺诈分析。', category: '基于你的兴趣', color: 'blue', icon: 'brain', students: '4.8k' },
-        { id: 2, title: '系统架构师核心素养', desc: '从代码编写到架构设计，掌握大型分布式系统的设计原则与权衡点。', category: '热门内容', color: 'indigo', icon: 'layers', students: '2.1k' }
-    ]
-};
+dbStore.init().catch(() => {});
 
 // ==================== 中间件 ====================
 
@@ -199,6 +124,14 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+const requireAdmin = async (req, res, next) => {
+    const user = await dbStore.getUserByUsername(req.user.username);
+    if (!user || user.role !== 'admin') {
+        return res.status(403).json({ code: 403, message: '无权限访问' });
+    }
+    next();
+};
+
 // ==================== 认证相关API ====================
 
 /**
@@ -224,6 +157,14 @@ app.post('/api/auth/register', async (req, res) => {
             });
         }
 
+        // 密码强度校验
+        if (password.length < 8) {
+            return res.status(400).json({
+                code: 400,
+                message: '密码长度至少为8位'
+            });
+        }
+
         // 邮箱格式校验
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
@@ -233,7 +174,8 @@ app.post('/api/auth/register', async (req, res) => {
             });
         }
 
-        if (db.users.has(username)) {
+        const existing = await dbStore.getUserByUsername(username);
+        if (existing) {
             return res.status(400).json({
                 code: 400,
                 message: '用户名已存在'
@@ -243,21 +185,12 @@ app.post('/api/auth/register', async (req, res) => {
         // 密码加密（bcryptjs，10轮salt）
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 创建用户
-        const user = {
+        await dbStore.createUser({
             username,
-            password: hashedPassword,
             email,
-            interests,
-            createdAt: new Date().toISOString(),
-            level: '学习新手',
-            points: 0,
-            learningDays: 0,
-            badges: 0
-        };
-
-        db.users.set(username, user);
-        saveData(); // 保存到文件
+            passwordHash: hashedPassword,
+            interests
+        });
 
         res.status(201).json({
             code: 201,
@@ -296,9 +229,9 @@ app.post('/api/auth/login', async (req, res) => {
             });
         }
 
-        const user = db.users.get(username);
+        const user = await dbStore.getUserByUsername(username);
 
-        if (!user || !(await bcrypt.compare(password, user.password))) {
+        if (!user || !(await bcrypt.compare(password, user.password_hash))) {
             // 记录失败尝试
             const attempt = recordFailedAttempt(username);
             const remaining = MAX_ATTEMPTS - attempt.count;
@@ -343,8 +276,8 @@ app.post('/api/auth/login', async (req, res) => {
  * 获取用户信息
  * GET /api/user/info
  */
-app.get('/api/user/info', authenticateToken, (req, res) => {
-    const user = db.users.get(req.user.username);
+app.get('/api/user/info', authenticateToken, async (req, res) => {
+    const user = await dbStore.getUserByUsername(req.user.username);
     if (!user) {
         return res.status(404).json({ code: 404, message: '用户不存在' });
     }
@@ -356,12 +289,12 @@ app.get('/api/user/info', authenticateToken, (req, res) => {
             userId: 1001,
             username: user.username,
             email: user.email,
-            learningGoal: '全栈开发探索者',
+            learningGoal: user.learning_goal,
             level: user.level,
             points: user.points,
-            learningDays: user.learningDays,
+            learningDays: user.learning_days,
             badges: user.badges,
-            interests: user.interests
+            interests: JSON.parse(user.interests_json || '[]')
         }
     });
 });
@@ -370,24 +303,24 @@ app.get('/api/user/info', authenticateToken, (req, res) => {
  * 更新用户信息
  * PUT /api/user/info
  */
-app.put('/api/user/info', authenticateToken, (req, res) => {
-    const user = db.users.get(req.user.username);
-    if (!user) {
+app.put('/api/user/info', authenticateToken, async (req, res) => {
+    const { level, points, learningDays, badges, learningGoal, interests } = req.body;
+    const updated = await dbStore.updateUserInfo(req.user.username, {
+        level,
+        points,
+        learningDays,
+        badges,
+        learningGoal,
+        interests
+    });
+    if (!updated) {
         return res.status(404).json({ code: 404, message: '用户不存在' });
     }
-
-    const { level, points, learningDays } = req.body;
-    if (level) user.level = level;
-    if (points !== undefined) user.points = points;
-    if (learningDays !== undefined) user.learningDays = learningDays;
-
-    db.users.set(req.user.username, user);
-    saveData(); // 保存到文件
 
     res.json({
         code: 200,
         message: '更新成功',
-        data: { username: user.username }
+        data: { username: updated.username }
     });
 });
 
@@ -397,18 +330,23 @@ app.put('/api/user/info', authenticateToken, (req, res) => {
  * 获取仪表盘数据
  * GET /api/dashboard
  */
-app.get('/api/dashboard', authenticateToken, (req, res) => {
-    const user = db.users.get(req.user.username);
+app.get('/api/dashboard', authenticateToken, async (req, res) => {
+    const user = await dbStore.getUserByUsername(req.user.username);
+    const paths = await dbStore.listLearningPaths();
+    const currentPath = paths.find(p => p.status === 'in_progress') || paths[0];
+    const totalSteps = (currentPath?.items?.length || 18);
+    const progress = currentPath?.progress ?? 65;
+    const completedSteps = Math.max(0, Math.min(totalSteps, Math.round((progress / 100) * totalSteps)));
 
     res.json({
         code: 200,
         message: '获取成功',
         data: {
             learningPath: {
-                title: 'React 实战进阶之路',
-                progress: 65,
-                completed: 12,
-                total: 18,
+                title: currentPath?.title || 'React 实战进阶之路',
+                progress,
+                completed: completedSteps,
+                total: totalSteps,
                 nextStep: {
                     title: '状态管理：Redux Toolkit',
                     difficulty: '中等'
@@ -440,7 +378,8 @@ app.get('/api/dashboard', authenticateToken, (req, res) => {
  * 获取首页推荐
  * GET /api/recommend/home
  */
-app.get('/api/recommend/home', authenticateToken, (req, res) => {
+app.get('/api/recommend/home', authenticateToken, async (req, res) => {
+    const hot = await dbStore.listRecommendations('home');
     res.json({
         code: 200,
         message: '获取成功',
@@ -450,7 +389,7 @@ app.get('/api/recommend/home', authenticateToken, (req, res) => {
                 subtitle: '从零基础到独立开发，系统化掌握现代 Web 开发核心技术栈',
                 tag: '精选课程'
             },
-            hot: db.recommendations
+            hot
         }
     });
 });
@@ -459,16 +398,17 @@ app.get('/api/recommend/home', authenticateToken, (req, res) => {
  * 获取个性化推荐
  * GET /api/recommend/personal
  */
-app.get('/api/recommend/personal', authenticateToken, (req, res) => {
-    const user = db.users.get(req.user.username);
-    const interests = user ? user.interests : [];
+app.get('/api/recommend/personal', authenticateToken, async (req, res) => {
+    const user = await dbStore.getUserByUsername(req.user.username);
+    const interests = user ? JSON.parse(user.interests_json || '[]') : [];
+    const recommendations = await dbStore.listRecommendations('personal');
 
     res.json({
         code: 200,
         message: '获取成功',
         data: {
             basedOnInterests: interests,
-            recommendations: db.recommendations,
+            recommendations,
             guessYouLike: [
                 { id: 1, title: 'NoSQL 数据库实战', icon: 'database', color: 'blue' },
                 { id: 2, title: 'Web 安全防御', icon: 'shield-check', color: 'green' },
@@ -485,10 +425,10 @@ app.get('/api/recommend/personal', authenticateToken, (req, res) => {
  * 获取资源列表
  * GET /api/resource/list
  */
-app.get('/api/resource/list', authenticateToken, (req, res) => {
+app.get('/api/resource/list', authenticateToken, async (req, res) => {
     const { category, page = 1, limit = 10 } = req.query;
 
-    let resources = db.resources;
+    let resources = await dbStore.listResources();
     if (category && category !== 'all') {
         resources = resources.filter(r => r.category.includes(category));
     }
@@ -513,8 +453,8 @@ app.get('/api/resource/list', authenticateToken, (req, res) => {
  * 获取资源详情
  * GET /api/resource/:id
  */
-app.get('/api/resource/:id', authenticateToken, (req, res) => {
-    const resource = db.resources.find(r => r.id === parseInt(req.params.id));
+app.get('/api/resource/:id', authenticateToken, async (req, res) => {
+    const resource = await dbStore.getResourceById(parseInt(req.params.id));
 
     if (!resource) {
         return res.status(404).json({ code: 404, message: '资源不存在' });
@@ -533,13 +473,14 @@ app.get('/api/resource/:id', authenticateToken, (req, res) => {
  * 获取学习路径列表
  * GET /api/path/list
  */
-app.get('/api/path/list', authenticateToken, (req, res) => {
+app.get('/api/path/list', authenticateToken, async (req, res) => {
+    const paths = await dbStore.listLearningPaths();
     res.json({
         code: 200,
         message: '获取成功',
         data: {
-            total: db.learningPaths.length,
-            items: db.learningPaths
+            total: paths.length,
+            items: paths
         }
     });
 });
@@ -548,13 +489,14 @@ app.get('/api/path/list', authenticateToken, (req, res) => {
  * 获取当前学习路径进度
  * GET /api/path/progress
  */
-app.get('/api/path/progress', authenticateToken, (req, res) => {
-    const currentPath = db.learningPaths.find(p => p.status === 'in_progress');
+app.get('/api/path/progress', authenticateToken, async (req, res) => {
+    const paths = await dbStore.listLearningPaths();
+    const currentPath = paths.find(p => p.status === 'in_progress');
 
     res.json({
         code: 200,
         message: '获取成功',
-        data: currentPath || db.learningPaths[0]
+        data: currentPath || paths[0]
     });
 });
 
@@ -600,6 +542,41 @@ app.post('/api/ai/chat', authenticateToken, (req, res) => {
     });
 });
 
+// ==================== 后台管理API ====================
+
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+    const users = await dbStore.listUsers();
+    res.json({ code: 200, message: '获取成功', data: { total: users.length, items: users } });
+});
+
+app.get('/api/admin/resources', authenticateToken, requireAdmin, async (req, res) => {
+    const resources = await dbStore.listResources();
+    res.json({ code: 200, message: '获取成功', data: { total: resources.length, items: resources } });
+});
+
+app.post('/api/admin/resources', authenticateToken, requireAdmin, async (req, res) => {
+    const created = await dbStore.createResource(req.body || {});
+    res.status(201).json({ code: 201, message: '创建成功', data: created });
+});
+
+app.put('/api/admin/resources/:id', authenticateToken, requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    const updated = await dbStore.updateResource(id, req.body || {});
+    if (!updated) return res.status(404).json({ code: 404, message: '资源不存在' });
+    res.json({ code: 200, message: '更新成功', data: updated });
+});
+
+app.delete('/api/admin/resources/:id', authenticateToken, requireAdmin, async (req, res) => {
+    const id = parseInt(req.params.id);
+    await dbStore.deleteResource(id);
+    res.json({ code: 200, message: '删除成功' });
+});
+
+app.get('/api/admin/db/schema', authenticateToken, requireAdmin, async (req, res) => {
+    const schema = await dbStore.getSchema();
+    res.json({ code: 200, message: '获取成功', data: schema });
+});
+
 // ==================== 前端路由处理 ====================
 
 // 所有其他路由返回index.html（单页应用支持）
@@ -627,7 +604,7 @@ app.listen(PORT, HOST, () => {
     }
     
     console.log(`📁 静态文件目录: ${path.join(__dirname, '../public')}`);
-    console.log(`💾 数据文件: ${DATA_FILE}\n`);
+    console.log(`💾 数据文件: ${dbStore.DB_FILE}\n`);
 });
 
 module.exports = app;
