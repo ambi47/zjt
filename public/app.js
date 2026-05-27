@@ -732,8 +732,8 @@ function addMessageToChat(message, sender) {
         </div>
     ` : `
         <div class="flex gap-4 max-w-3xl">
-            <div class="w-8 h-8 rounded-lg bg-[#0d2699] flex-shrink-0 flex items-center justify-center text-white shadow-md text-xl">
-                🦕
+            <div class="w-8 h-8 flex-shrink-0">
+                <img src="/resource/logo_ai.png" alt="AI助理" class="w-full h-full object-contain">
             </div>
             <div class="space-y-2">
                 <div class="chat-bubble-ai p-4 rounded-2xl shadow-sm text-sm leading-relaxed text-gray-700" style="white-space: pre-line;">${escapeHtml(message)}</div>
