@@ -542,6 +542,14 @@ app.post('/api/ai/chat', authenticateToken, (req, res) => {
     });
 });
 
+// ==================== AI助理独立路由（新增）====================
+/**
+ * 新增独立路由：/api/ai-assistant
+ * 完全独立封装，不修改任何现有接口
+ */
+const aiAssistantRouter = require('./ai-assistant/router');
+app.use('/api/ai-assistant', authenticateToken, aiAssistantRouter);
+
 // ==================== 后台管理API ====================
 
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
