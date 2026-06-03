@@ -43,6 +43,11 @@ const AIAssistant = (function() {
         const sideMenu = document.getElementById('nav-ai-assistant');
         if (sideMenu) {
             sideMenu.addEventListener('click', function(e) {
+                if (typeof window.switchView === 'function') {
+                    e.preventDefault();
+                    window.switchView('ai-assistant');
+                    return;
+                }
                 e.preventDefault();
                 openPanelView();
             });
@@ -224,7 +229,7 @@ const AIAssistant = (function() {
     // 打开侧边栏面板视图
     function openPanelView() {
         // 隐藏其他视图
-        document.querySelectorAll('[id$="-view"]').forEach(view => {
+        document.querySelectorAll('#app-view main[id$="-view"]').forEach(view => {
             view.classList.add('view-hidden');
         });
         
@@ -385,6 +390,7 @@ const AIAssistant = (function() {
         const container = document.getElementById(messagesId);
         if (!container) return;
         
+        const displayMessage = sender === 'ai' ? normalizeAiText(message) : message;
         const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         const isPanel = viewType === 'panel';
         
@@ -398,7 +404,7 @@ const AIAssistant = (function() {
                     ${initial}
                 </div>
                 <div class="space-y-${isPanel ? '2' : '1'} text-right">
-                    <div class="chat-bubble-user-${isPanel ? '' : 'sm'} p-${isPanel ? '4' : '3'} rounded-${isPanel ? '2xl' : 'xl'} shadow-${isPanel ? 'md' : 'sm'} text-${isPanel ? 'sm' : 'xs'} leading-relaxed" style="white-space: pre-line;">${escapeHtml(message)}</div>
+                    <div class="chat-bubble-user-${isPanel ? '' : 'sm'} p-${isPanel ? '4' : '3'} rounded-${isPanel ? '2xl' : 'xl'} shadow-${isPanel ? 'md' : 'sm'} text-${isPanel ? 'sm' : 'xs'} leading-relaxed" style="white-space: pre-line;">${escapeHtml(displayMessage)}</div>
                     <p class="text-[10px] text-gray-400 ${isPanel ? 'mr-1' : ''}">${time}</p>
                 </div>
             </div>
@@ -408,7 +414,7 @@ const AIAssistant = (function() {
                     <img src="/resource/logo_ai.png" alt="AI助理" class="w-full h-full object-contain">
                 </div>
                 <div class="space-y-${isPanel ? '2' : '1'}">
-                    <div class="chat-bubble-ai-${isPanel ? '' : 'sm'} p-${isPanel ? '4' : '3'} rounded-${isPanel ? '2xl' : 'xl'} shadow-${isPanel ? 'sm' : 'sm'} text-${isPanel ? 'sm' : 'xs'} leading-relaxed text-gray-700" style="white-space: pre-line;">${escapeHtml(message)}</div>
+                    <div class="chat-bubble-ai-${isPanel ? '' : 'sm'} p-${isPanel ? '4' : '3'} rounded-${isPanel ? '2xl' : 'xl'} shadow-${isPanel ? 'sm' : 'sm'} text-${isPanel ? 'sm' : 'xs'} leading-relaxed text-gray-700" style="white-space: pre-line;">${escapeHtml(displayMessage)}</div>
                     <p class="text-[10px] text-gray-400 ${isPanel ? 'ml-1' : ''}">${time}</p>
                 </div>
             </div>
@@ -424,6 +430,19 @@ const AIAssistant = (function() {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    function normalizeAiText(text) {
+        if (typeof text !== 'string') return '';
+        let s = text.replace(/\r\n/g, '\n');
+        s = s.replace(/```[\s\S]*?```/g, (m) => m.replace(/```/g, '').trim());
+        s = s.replace(/^\s{0,3}#{1,6}\s+/gm, '');
+        s = s.replace(/\*\*(.*?)\*\*/g, '$1');
+        s = s.replace(/`([^`]+)`/g, '$1');
+        s = s.replace(/^\s*[-*+]\s+/gm, '• ');
+        s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1（$2）');
+        s = s.replace(/\n{3,}/g, '\n\n');
+        return s.trim();
     }
     
     // 暴露公共方法

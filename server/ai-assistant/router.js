@@ -16,6 +16,20 @@ const deepseek = require('./deepseek-api');
 
 const router = express.Router();
 
+function normalizeItems(items) {
+    if (!items) return [];
+    if (Array.isArray(items)) return items;
+    if (typeof items === 'string') {
+        try {
+            const parsed = JSON.parse(items);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+            return [];
+        }
+    }
+    return [];
+}
+
 /**
  * 新增独立接口：AI助理聊天
  * POST /api/ai-assistant/chat
@@ -88,18 +102,16 @@ router.post('/chat', async (req, res) => {
         // 获取已完成课程列表（从学习路径中提取）
         const completedCourses = [];
         learningPaths.forEach(path => {
-            if (path.items) {
-                const items = JSON.parse(path.items);
-                items.forEach(item => {
-                    if (item.completed && item.title) {
-                        completedCourses.push({
-                            title: item.title,
-                            category: path.title,
-                            completedAt: item.completedAt || '近期'
-                        });
-                    }
-                });
-            }
+            const items = normalizeItems(path.items);
+            items.forEach(item => {
+                if (item && item.completed && item.title) {
+                    completedCourses.push({
+                        title: item.title,
+                        category: path.title,
+                        completedAt: item.completedAt || '近期'
+                    });
+                }
+            });
             // 如果整个路径已完成，将路径本身也作为已完成课程
             if (path.status === 'completed') {
                 completedCourses.push({

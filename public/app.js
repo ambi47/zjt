@@ -776,7 +776,7 @@ async function sendMessage() {
     sendBtn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div>';
 
     try {
-        const response = await apiRequest('/api/ai/chat', {
+        const response = await apiRequest('/api/ai-assistant/chat', {
             method: 'POST',
             body: JSON.stringify({ message })
         });
@@ -799,6 +799,7 @@ async function sendMessage() {
 function addMessageToChat(message, sender) {
     const container = document.getElementById('chat-messages');
     const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    const displayMessage = sender === 'ai' ? normalizeAiText(message) : message;
 
     const messageHtml = sender === 'user' ? `
         <div class="flex gap-4 max-w-3xl ml-auto flex-row-reverse">
@@ -806,7 +807,7 @@ function addMessageToChat(message, sender) {
                 ${appState.user?.username?.charAt(0) || '我'}
             </div>
             <div class="space-y-2 text-right">
-                <div class="chat-bubble-user p-4 rounded-2xl shadow-md text-sm leading-relaxed" style="white-space: pre-line;">${escapeHtml(message)}</div>
+                <div class="chat-bubble-user p-4 rounded-2xl shadow-md text-sm leading-relaxed" style="white-space: pre-line;">${escapeHtml(displayMessage)}</div>
                 <p class="text-[10px] text-gray-400 mr-1">${time}</p>
             </div>
         </div>
@@ -816,7 +817,7 @@ function addMessageToChat(message, sender) {
                 <img src="/resource/logo_ai.png" alt="AI助理" class="w-full h-full object-contain">
             </div>
             <div class="space-y-2">
-                <div class="chat-bubble-ai p-4 rounded-2xl shadow-sm text-sm leading-relaxed text-gray-700" style="white-space: pre-line;">${escapeHtml(message)}</div>
+                <div class="chat-bubble-ai p-4 rounded-2xl shadow-sm text-sm leading-relaxed text-gray-700" style="white-space: pre-line;">${escapeHtml(displayMessage)}</div>
                 <p class="text-[10px] text-gray-400 ml-1">${time}</p>
             </div>
         </div>
@@ -830,6 +831,19 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function normalizeAiText(text) {
+    if (typeof text !== 'string') return '';
+    let s = text.replace(/\r\n/g, '\n');
+    s = s.replace(/```[\s\S]*?```/g, (m) => m.replace(/```/g, '').trim());
+    s = s.replace(/^\s{0,3}#{1,6}\s+/gm, '');
+    s = s.replace(/\*\*(.*?)\*\*/g, '$1');
+    s = s.replace(/`([^`]+)`/g, '$1');
+    s = s.replace(/^\s*[-*+]\s+/gm, '• ');
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1（$2）');
+    s = s.replace(/\n{3,}/g, '\n\n');
+    return s.trim();
 }
 
 // ==================== 初始化 ====================
