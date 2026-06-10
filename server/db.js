@@ -587,9 +587,26 @@ async function init() {
     if (pathCount === 0) {
         const stmt = db.prepare('INSERT INTO learning_paths (title, stage, status, progress, items_json, created_at) VALUES (?, ?, ?, ?, ?, ?)');
         const seed = [
-            { title: '前端基础与工程化', stage: 1, status: 'completed', progress: 100, items: ['HTML5/CSS3 进阶', 'ES6+ 核心语法', 'Webpack/Vite 工具'] },
-            { title: 'React 实战进阶', stage: 2, status: 'in_progress', progress: 65, items: ['Hooks 深度解析', '状态管理实战', 'React 性能优化'] },
-            { title: 'Node.js 后端开发', stage: 3, status: 'pending', progress: null, items: ['Express 基础', '数据库操作', 'RESTful API 设计'] }
+            // 前端开发路径
+            { title: '前端基础与工程化', stage: 1, status: 'pending', progress: 0, items: ['HTML5 语义化与新特性', 'CSS3 布局与动画', 'JavaScript 核心语法', 'Webpack/Vite 工具链'] },
+            { title: 'React 实战进阶', stage: 2, status: 'in_progress', progress: 65, items: ['React Hooks 深度解析', 'Redux/Zustand 状态管理', 'React 性能优化', 'Next.js 全栈框架'] },
+            { title: 'Vue3 生态系统', stage: 3, status: 'pending', progress: 0, items: ['Vue3 Composition API', 'Pinia 状态管理', 'Vue Router', 'Vite 插件开发'] },
+            
+            // 后端开发路径
+            { title: 'Node.js 后端开发', stage: 1, status: 'pending', progress: 0, items: ['Node.js 核心模块', 'Express 框架', 'MongoDB 数据库', 'RESTful API 设计'] },
+            { title: 'Python Web 开发', stage: 2, status: 'pending', progress: 0, items: ['Python 基础语法', 'Django 框架', 'Flask 微服务', '数据处理与分析'] },
+            { title: 'Go 语言后端', stage: 3, status: 'pending', progress: 0, items: ['Go 语言基础', 'Gin Web 框架', 'GORM 数据库', '微服务架构'] },
+            
+            // 全栈开发路径
+            { title: '全栈开发工程师', stage: 1, status: 'pending', progress: 0, items: ['前端基础', '后端基础', '数据库设计', '部署与运维'] },
+            { title: 'DevOps 与云原生', stage: 2, status: 'pending', progress: 0, items: ['Docker 容器化', 'Kubernetes 编排', 'CI/CD 流水线', '监控与日志'] },
+            
+            // AI/ML 路径
+            { title: 'Python 机器学习入门', stage: 1, status: 'pending', progress: 0, items: ['Python 数据分析', 'NumPy/Pandas', 'Scikit-learn', '机器学习基础'] },
+            { title: '深度学习与应用', stage: 2, status: 'pending', progress: 0, items: ['TensorFlow/PyTorch', '神经网络基础', '计算机视觉', '自然语言处理'] },
+            
+            // 移动开发路径
+            { title: '移动端开发入门', stage: 1, status: 'pending', progress: 0, items: ['React Native 基础', 'Flutter 框架', '跨平台开发', '应用发布'] }
         ];
         seed.forEach((p) => stmt.run([p.title, p.stage, p.status, p.progress, JSON.stringify(p.items || []), now]));
         stmt.free();
@@ -682,10 +699,10 @@ async function createResource(payload) {
     const level = payload.level || null;
     const duration = payload.duration || null;
 
-    db.run(
-        'INSERT INTO resources (title, desc, category, icon, emoji, image, color, students, url, outline_json, provider, level, duration, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [title, desc, category, icon, emoji, image, color, students, url, outline_json, provider, level, duration, now]
-    );
+    const stmt = db.prepare('INSERT INTO resources (title, desc, category, icon, emoji, image, color, students, url, outline_json, provider, level, duration, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    stmt.bind([title, desc, category, icon, emoji, image, color, students, url, outline_json, provider, level, duration, now]);
+    stmt.step();
+    stmt.free();
     const row = queryOne('SELECT last_insert_rowid() AS id');
     saveIfReady();
     return await getResourceById(row.id);
@@ -712,17 +729,20 @@ async function updateResource(id, patch = {}) {
         duration: patch.duration ?? existing.duration
     };
 
-    db.run(
-        'UPDATE resources SET title = ?, desc = ?, category = ?, icon = ?, emoji = ?, image = ?, color = ?, students = ?, url = ?, outline_json = ?, provider = ?, level = ?, duration = ? WHERE id = ?',
-        [next.title, next.desc, next.category, next.icon, next.emoji, next.image, next.color, next.students, next.url, next.outline_json, next.provider, next.level, next.duration, id]
-    );
+    const stmt = db.prepare('UPDATE resources SET title = ?, desc = ?, category = ?, icon = ?, emoji = ?, image = ?, color = ?, students = ?, url = ?, outline_json = ?, provider = ?, level = ?, duration = ? WHERE id = ?');
+    stmt.bind([next.title, next.desc, next.category, next.icon, next.emoji, next.image, next.color, next.students, next.url, next.outline_json, next.provider, next.level, next.duration, id]);
+    stmt.step();
+    stmt.free();
     saveIfReady();
     return await getResourceById(id);
 }
 
 async function deleteResource(id) {
     await init();
-    db.run('DELETE FROM resources WHERE id = ?', [id]);
+    const stmt = db.prepare('DELETE FROM resources WHERE id = ?');
+    stmt.bind([id]);
+    stmt.step();
+    stmt.free();
     saveIfReady();
 }
 
@@ -769,6 +789,110 @@ async function listLearningPaths() {
     }));
 }
 
+async function getLearningPathById(id) {
+    await init();
+    const path = queryOne('SELECT * FROM learning_paths WHERE id = ?', [id]);
+    return path ? { ...path, items: JSON.parse(path.items_json || '[]') } : null;
+}
+
+async function createLearningPath(payload) {
+    await init();
+    const now = new Date().toISOString();
+    console.log('createLearningPath called with payload:', payload);
+    
+    const stmt = db.prepare(`
+        INSERT INTO learning_paths (title, stage, status, progress, items_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    
+    const params = [
+        payload.title,
+        payload.stage !== undefined ? payload.stage : 1,
+        payload.status || 'pending',
+        payload.progress !== undefined ? payload.progress : 0,
+        JSON.stringify(payload.items || []),
+        now
+    ];
+    
+    console.log('Executing INSERT with params:', params);
+    stmt.bind(params);
+    stmt.step();
+    stmt.free();
+    saveIfReady();
+    
+    const row = queryOne('SELECT last_insert_rowid() AS id');
+    console.log('New learning path created, lastId:', row.id);
+    return await getLearningPathById(row.id);
+}
+
+async function updateLearningPath(id, payload) {
+    await init();
+    const now = new Date().toISOString();
+    
+    const existingPath = await getLearningPathById(id);
+    if (!existingPath) return null;
+    
+    // 只有在明确要设置新状态时才处理状态切换
+    if (payload.status === 'in_progress') {
+        const updateStmt = db.prepare('UPDATE learning_paths SET status = CASE WHEN status = "in_progress" THEN "pending" ELSE status END');
+        updateStmt.step();
+        updateStmt.free();
+    }
+    
+    const stmt = db.prepare(`
+        UPDATE learning_paths 
+        SET title = ?, stage = ?, status = ?, progress = ?, items_json = ?
+        WHERE id = ?
+    `);
+    
+    // 准备更新参数
+    const newTitle = payload.title !== undefined ? payload.title : existingPath.title;
+    const newStage = payload.stage !== undefined ? payload.stage : existingPath.stage;
+    const newStatus = payload.status !== undefined ? payload.status : existingPath.status;
+    // 只有当 payload.progress 明确存在时才更新，否则保持原样
+    const newProgress = payload.progress !== undefined ? payload.progress : existingPath.progress;
+    const newItemsJson = payload.items !== undefined ? JSON.stringify(payload.items) : existingPath.items_json;
+    
+    stmt.bind([
+        newTitle,
+        newStage,
+        newStatus,
+        newProgress,
+        newItemsJson,
+        id
+    ]);
+    stmt.step();
+    stmt.free();
+    saveIfReady();
+    
+    return await getLearningPathById(id);
+}
+
+async function deleteLearningPath(id) {
+    await init();
+    const stmt = db.prepare('DELETE FROM learning_paths WHERE id = ?');
+    stmt.bind([id]);
+    stmt.step();
+    stmt.free();
+    saveIfReady();
+    return true;
+}
+
+async function updateLearningPathStatus(id, status, progress = null) {
+    await init();
+    if (status === 'in_progress') {
+        const updateStmt = db.prepare('UPDATE learning_paths SET status = CASE WHEN status = "in_progress" THEN "pending" ELSE status END');
+        updateStmt.step();
+        updateStmt.free();
+    }
+    const stmt = db.prepare('UPDATE learning_paths SET status = ?, progress = ? WHERE id = ?');
+    stmt.bind([status, progress, id]);
+    stmt.step();
+    stmt.free();
+    saveIfReady();
+    return await getLearningPathById(id);
+}
+
 async function listRecommendations(scope) {
     await init();
     return queryAll('SELECT * FROM recommendations WHERE scope = ? ORDER BY id ASC', [scope]);
@@ -788,5 +912,10 @@ module.exports = {
     getSchema,
     getResourceById,
     listLearningPaths,
+    getLearningPathById,
+    createLearningPath,
+    updateLearningPath,
+    deleteLearningPath,
+    updateLearningPathStatus,
     listRecommendations
 };

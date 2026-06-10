@@ -624,7 +624,17 @@ function renderLearningPaths(paths) {
                             <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">阶段 0${path.stage}</span>
                             <h3 class="text-xl font-bold mt-1 ${!isCompleted && !isInProgress ? 'text-gray-400' : ''}">${path.title}</h3>
                         </div>
-                        <span class="px-3 py-1 ${statusClass} text-xs font-bold rounded-full">${statusText}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 ${statusClass} text-xs font-bold rounded-full">${statusText}</span>
+                            <div class="flex gap-1">
+                                <button onclick="editPath(${path.id})" class="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="编辑">
+                                    <i data-lucide="edit-2" class="w-4 h-4 text-gray-500"></i>
+                                </button>
+                                <button onclick="deletePath(${path.id})" class="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="删除">
+                                    <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     ${path.items ? `
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -636,13 +646,61 @@ function renderLearningPaths(paths) {
                         `).join('')}
                     </div>
                     ` : ''}
-                    ${isInProgress ? '<button class="w-full mt-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-bold transition-colors">继续学习</button>' : ''}
+                    <div class="mt-4 flex gap-2">
+                        ${isInProgress ? `
+                            <button class="flex-1 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-sm font-bold transition-colors" disabled>当前学习中</button>
+                            <button onclick="updateLearningPathProgress(${path.id}, ${Math.min(100, (path.progress || 0) + 10)})" class="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-xl text-sm font-bold transition-colors">+10%</button>
+                        ` : isCompleted ? `
+                            <button class="flex-1 py-2 bg-gray-100 text-gray-400 rounded-xl text-sm font-bold transition-colors" disabled>已完成</button>
+                        ` : `
+                            <button onclick="selectLearningPath(${path.id})" class="flex-1 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-sm font-bold transition-colors">选择此路径</button>
+                        `}
+                    </div>
                 </div>
             </div>
         `;
     }).join('');
 
     lucide.createIcons();
+}
+
+async function selectLearningPath(pathId) {
+    try {
+        const response = await apiRequest(`/api/path/select/${pathId}`, {
+            method: 'POST'
+        });
+        
+        if (response.code === 200) {
+            await loadLearningPaths();
+            await loadDashboard();
+            alert('已选择学习路径！');
+        }
+    } catch (error) {
+        console.error('选择学习路径失败:', error);
+        alert('选择学习路径失败');
+    }
+}
+
+async function updateLearningPathProgress(pathId, progress) {
+    try {
+        const response = await apiRequest(`/api/path/progress/${pathId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                progress: progress,
+                status: progress >= 100 ? 'completed' : 'in_progress'
+            })
+        });
+        
+        if (response.code === 200) {
+            await loadLearningPaths();
+            await loadDashboard();
+        }
+    } catch (error) {
+        console.error('更新学习路径失败:', error);
+    }
 }
 
 // ==================== 视图切换 ====================
@@ -844,6 +902,134 @@ function normalizeAiText(text) {
     s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1（$2）');
     s = s.replace(/\n{3,}/g, '\n\n');
     return s.trim();
+}
+
+// ==================== 学习路径模态框功能 ====================
+
+function openPathModal(path = null) {
+    const modal = document.getElementById('path-modal');
+    const title = document.getElementById('path-modal-title');
+    const idInput = document.getElementById('path-id');
+    const titleInput = document.getElementById('path-title');
+    const stageInput = document.getElementById('path-stage');
+    const itemsInput = document.getElementById('path-items');
+
+    if (path) {
+        title.textContent = '编辑学习路径';
+        idInput.value = path.id;
+        titleInput.value = path.title;
+        stageInput.value = path.stage;
+        itemsInput.value = (path.items || []).join('\n');
+    } else {
+        title.textContent = '创建学习路径';
+        idInput.value = '';
+        titleInput.value = '';
+        stageInput.value = 1;
+        itemsInput.value = '';
+    }
+
+    modal.classList.remove('hidden');
+    lucide.createIcons();
+}
+
+function closePathModal() {
+    const modal = document.getElementById('path-modal');
+    modal.classList.add('hidden');
+}
+
+async function savePath(event) {
+    event.preventDefault();
+    
+    const id = document.getElementById('path-id').value;
+    const title = document.getElementById('path-title').value.trim();
+    const stage = parseInt(document.getElementById('path-stage').value);
+    const itemsText = document.getElementById('path-items').value;
+    
+    const items = itemsText.split('\n')
+        .map(item => item.trim())
+        .filter(item => item.length > 0);
+
+    try {
+        console.log('Saving learning path:', { id, title, stage, items });
+        
+        if (id) {
+            // 更新现有路径
+            const response = await apiRequest(`/api/path/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, stage, items })
+            });
+            
+            console.log('Update response:', response);
+            
+            if (response.code === 200) {
+                alert('学习路径更新成功！');
+                closePathModal();
+                await loadLearningPaths();
+            } else {
+                alert('更新失败: ' + (response.message || '未知错误'));
+            }
+        } else {
+            // 创建新路径
+            const response = await apiRequest('/api/path', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, stage, items, status: 'pending', progress: 0 })
+            });
+            
+            console.log('Create response:', response);
+            
+            if (response.code === 200) {
+                alert('学习路径创建成功！');
+                closePathModal();
+                await loadLearningPaths();
+            } else {
+                alert('创建失败: ' + (response.message || '未知错误'));
+            }
+        }
+    } catch (error) {
+        console.error('保存学习路径失败:', error);
+        alert('保存失败: ' + (error.message || '请重试'));
+    }
+}
+
+async function editPath(pathId) {
+    try {
+        if (!appState.learningPaths) {
+            await loadLearningPaths();
+        }
+        
+        const path = appState.learningPaths.find(p => p.id === pathId);
+        
+        if (path) {
+            openPathModal(path);
+        } else {
+            alert('未找到学习路径');
+        }
+    } catch (error) {
+        console.error('打开编辑失败:', error);
+        alert('打开编辑失败');
+    }
+}
+
+async function deletePath(pathId) {
+    if (!confirm('确定要删除这条学习路径吗？')) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest(`/api/path/${pathId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.code === 200) {
+            alert('删除成功！');
+            await loadLearningPaths();
+        }
+    } catch (error) {
+        console.error('删除学习路径失败:', error);
+        alert('删除失败，请重试');
+    }
 }
 
 // ==================== 初始化 ====================

@@ -31,6 +31,35 @@ function normalizeItems(items) {
 }
 
 /**
+ * 检查问题是否与学习相关
+ * @param {string} message - 用户提问
+ * @returns {boolean} - 是否为学习相关问题
+ */
+function isLearningRelated(message) {
+    const lowerMsg = message.toLowerCase();
+    
+    // 学习相关关键词
+    const learningKeywords = [
+        '学习', '课程', '教程', '知识', '技术', '编程', '代码', '开发',
+        'python', 'java', 'javascript', 'js', 'react', 'vue', '前端', '后端',
+        '算法', '数据结构', '数据库', '网络', '安全', '设计', 'ui', 'ux',
+        '人工智能', 'ai', '机器学习', '深度学习', '路径', '计划', '资源',
+        '推荐', '入门', '进阶', '高级', '基础', '概念', '问题', '解答',
+        '练习', '项目', '实战', '技能', '能力', '提升', '掌握', '理解',
+        'hook', '函数', '类', '对象', '数组', '字符串', '变量', '循环',
+        '条件', '数组', '链表', '树', '图', '排序', '搜索', '算法',
+        'html', 'css', 'php', 'go', 'rust', 'c++', 'c#', 'swift', 'kotlin',
+        'sql', 'nosql', 'mongodb', 'mysql', 'redis', 'docker', 'kubernetes',
+        'git', 'github', '版本控制', '测试', '调试', '部署', '运维',
+        'api', '接口', '框架', '库', '工具', '软件', '应用', '网站',
+        'web', '移动端', '小程序', '公众号', '安卓', 'ios', 'app'
+    ];
+    
+    // 检查是否包含学习相关关键词
+    return learningKeywords.some(keyword => lowerMsg.includes(keyword));
+}
+
+/**
  * 新增独立接口：AI助理聊天
  * POST /api/ai-assistant/chat
  * 
@@ -68,7 +97,19 @@ router.post('/chat', async (req, res) => {
         });
     }
 
-    // 3. 获取API密钥（环境变量配置）
+    // 3. 检查问题是否与学习相关
+    if (!isLearningRelated(message)) {
+        return res.json({
+            code: 200,
+            message: '回复成功',
+            data: {
+                answer: '抱歉，我是你的AI学习助理，仅能回答与学习相关的问题。请提出关于编程、课程、学习计划、技术知识等方面的问题，我会尽力为你提供帮助！',
+                timestamp: new Date().toISOString()
+            }
+        });
+    }
+
+    // 4. 获取API密钥（环境变量配置）
     const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
         return res.status(500).json({
