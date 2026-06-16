@@ -53,6 +53,222 @@ function clearLoginAttempts(username) {
     loginAttempts.delete(username);
 }
 
+function safeParseArray(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value !== 'string') return [];
+    try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function normalizeText(value = '') {
+    return String(value)
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .trim();
+}
+
+function parseStudentsCount(label = '') {
+    const text = String(label).trim().toLowerCase();
+    if (!text) return 0;
+    const number = parseFloat(text);
+    if (Number.isNaN(number)) return 0;
+    if (text.endsWith('k')) return Math.round(number * 1000);
+    if (text.endsWith('w')) return Math.round(number * 10000);
+    return Math.round(number);
+}
+
+const INTEREST_KEYWORD_GROUPS = [
+    {
+        label: '前端开发',
+        keywords: ['前端', 'web', 'html', 'css', 'javascript', 'typescript', 'react', 'vue', 'tailwind', 'dom', '浏览器', '页面', '交互', 'ui', 'ux'],
+        categories: ['前端基础', '前端实战', '编程开发', '设计美学', '全栈联调']
+    },
+    {
+        label: '后端开发',
+        keywords: ['后端', 'node', 'express', 'java', 'spring', 'python', 'go', '接口', 'api', '服务端', '鉴权', 'jwt', 'gin'],
+        categories: ['后端技术', '安全与鉴权', '全栈联调', '编程开发']
+    },
+    {
+        label: '数据库',
+        keywords: ['数据库', 'sql', 'sqlite', 'mysql', 'postgresql', 'redis', 'nosql', '查询', '索引', '建表'],
+        categories: ['数据库', '后端技术']
+    },
+    {
+        label: '人工智能',
+        keywords: ['ai', '人工智能', '机器学习', '深度学习', '神经网络', 'prompt', 'llm', 'deepseek', '模型'],
+        categories: ['AI 技术', '编程开发']
+    },
+    {
+        label: '网络安全',
+        keywords: ['安全', '鉴权', 'jwt', 'oauth', 'xss', 'csrf', 'owasp', '加密', '网络安全'],
+        categories: ['安全与鉴权', '网络基础', '后端技术']
+    },
+    {
+        label: 'UI设计',
+        keywords: ['ui', 'ux', '设计', '排版', '配色', 'figma', '原型', '产品', '视觉'],
+        categories: ['设计美学', '前端实战']
+    },
+    {
+        label: '工程化',
+        keywords: ['工程化', 'vite', 'webpack', 'eslint', 'prettier', 'npm', '构建', '部署', '性能', 'devtools', 'git', 'github'],
+        categories: ['开发效率', '工程协作', '全栈联调']
+    },
+    {
+        label: '操作系统',
+        keywords: ['linux', 'bash', 'shell', 'powershell', '操作系统', '命令行', '终端', '系统管理'],
+        categories: ['操作系统']
+    }
+];
+
+function expandInterestProfile(interests = []) {
+    const rawInterests = Array.isArray(interests)
+        ? interests.map((item) => String(item || '').trim()).filter(Boolean)
+        : [];
+
+    const keywordSet = new Set();
+    const categorySet = new Set();
+
+    rawInterests.forEach((interest) => {
+        const normalized = normalizeText(interest);
+        if (!normalized) return;
+
+        keywordSet.add(normalized);
+        interest.split(/[、,，/\s]+/).map((part) => normalizeText(part)).filter(Boolean).forEach((part) => keywordSet.add(part));
+
+        INTEREST_KEYWORD_GROUPS.forEach((group) => {
+            const matched = normalized.includes(normalizeText(group.label))
+                || normalizeText(group.label).includes(normalized)
+                || group.keywords.some((keyword) => normalized.includes(normalizeText(keyword)));
+
+            if (matched) {
+                keywordSet.add(normalizeText(group.label));
+                group.keywords.forEach((keyword) => keywordSet.add(normalizeText(keyword)));
+                group.categories.forEach((category) => categorySet.add(category));
+            }
+        });
+    });
+
+    return {
+        rawInterests,
+        keywords: Array.from(keywordSet),
+        categories: Array.from(categorySet)
+    };
+}
+
+function scoreResourceForInterest(resource, profile) {
+    const haystack = normalizeText([
+        resource.title,
+        resource.desc,
+        resource.category,
+        resource.provider,
+        resource.level,
+        resource.duration
+    ].filter(Boolean).join(' '));
+
+    const titleText = normalizeText(resource.title);
+    const categoryText = normalizeText(resource.category);
+    const descText = normalizeText(resource.desc);
+    let score = 0;
+
+    profile.rawInterests.forEach((interest) => {
+        const normalized = normalizeText(interest);
+        if (!normalized) return;
+        if (titleText.includes(normalized)) score += 18;
+        else if (categoryText.includes(normalized)) score += 14;
+        else if (descText.includes(normalized)) score += 10;
+        else if (haystack.includes(normalized)) score += 8;
+    });
+
+    profile.keywords.forEach((keyword) => {
+        if (!keyword) return;
+        if (titleText.includes(keyword)) score += 8;
+        else if (categoryText.includes(keyword)) score += 6;
+        else if (descText.includes(keyword)) score += 4;
+        else if (haystack.includes(keyword)) score += 3;
+    });
+
+    if (profile.categories.includes(resource.category)) {
+        score += 12;
+    }
+
+    score += Math.min(parseStudentsCount(resource.students) / 500, 8);
+    return score;
+}
+
+function uniqueResources(items = []) {
+    const seen = new Set();
+    return items.filter((item) => {
+        if (!item || seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+    });
+}
+
+function formatRecommendationItem(resource, reason, buttonText = '查看详情') {
+    return {
+        id: resource.id,
+        title: resource.title,
+        desc: resource.desc,
+        category: resource.category,
+        provider: resource.provider,
+        color: resource.color || 'blue',
+        icon: resource.icon || 'book-open',
+        students: resource.students,
+        url: resource.url || '',
+        reason,
+        buttonText
+    };
+}
+
+function buildPersonalizedRecommendationData(resources, interests = []) {
+    const profile = expandInterestProfile(interests);
+    const sortedByPopularity = [...resources].sort((a, b) => parseStudentsCount(b.students) - parseStudentsCount(a.students));
+
+    const scoredResources = resources
+        .map((resource) => ({
+            resource,
+            score: scoreResourceForInterest(resource, profile)
+        }))
+        .sort((a, b) => b.score - a.score || parseStudentsCount(b.resource.students) - parseStudentsCount(a.resource.students));
+
+    const matchedResources = scoredResources.filter((item) => item.score > 0).map((item) => item.resource);
+    const recommendationPool = matchedResources.length > 0 ? matchedResources : sortedByPopularity;
+
+    const recommendations = uniqueResources(recommendationPool)
+        .slice(0, 4)
+        .map((resource) => formatRecommendationItem(
+            resource,
+            profile.rawInterests.length > 0
+                ? `匹配兴趣：${profile.rawInterests.slice(0, 2).join('、')}`
+                : '热门学习资源',
+            '立即学习'
+        ));
+
+    const excludedIds = new Set(recommendations.map((item) => item.id));
+    const guessPool = uniqueResources([
+        ...matchedResources.filter((resource) => !excludedIds.has(resource.id)),
+        ...sortedByPopularity.filter((resource) => !excludedIds.has(resource.id))
+    ]);
+
+    const guessYouLike = guessPool
+        .slice(0, 4)
+        .map((resource) => formatRecommendationItem(
+            resource,
+            profile.rawInterests.length > 0 ? '你可能也会感兴趣' : '猜你想学',
+            '查看资源'
+        ));
+
+    return {
+        basedOnInterests: profile.rawInterests,
+        recommendations,
+        guessYouLike
+    };
+}
+
 // ==================== 数据库 ====================
 dbStore.init().catch(() => {});
 
@@ -400,21 +616,17 @@ app.get('/api/recommend/home', authenticateToken, async (req, res) => {
  */
 app.get('/api/recommend/personal', authenticateToken, async (req, res) => {
     const user = await dbStore.getUserByUsername(req.user.username);
-    const interests = user ? JSON.parse(user.interests_json || '[]') : [];
-    const recommendations = await dbStore.listRecommendations('personal');
+    const interests = user ? safeParseArray(user.interests_json) : [];
+    const resources = await dbStore.listResources();
+    const recommendationData = buildPersonalizedRecommendationData(resources, interests);
 
     res.json({
         code: 200,
         message: '获取成功',
         data: {
-            basedOnInterests: interests,
-            recommendations,
-            guessYouLike: [
-                { id: 1, title: 'NoSQL 数据库实战', icon: 'database', color: 'blue' },
-                { id: 2, title: 'Web 安全防御', icon: 'shield-check', color: 'green' },
-                { id: 3, title: 'Go 语言工程化', icon: 'terminal', color: 'cyan' },
-                { id: 4, title: '微前端架构解析', icon: 'monitor', color: 'indigo' }
-            ]
+            basedOnInterests: recommendationData.basedOnInterests,
+            recommendations: recommendationData.recommendations,
+            guessYouLike: recommendationData.guessYouLike
         }
     });
 });
@@ -426,7 +638,7 @@ app.get('/api/recommend/personal', authenticateToken, async (req, res) => {
  * GET /api/resource/list
  */
 app.get('/api/resource/list', authenticateToken, async (req, res) => {
-    const { category, page = 1, limit = 10 } = req.query;
+    const { category, page = 1, limit = 200 } = req.query;
 
     let resources = await dbStore.listResources();
     if (category && category !== 'all') {

@@ -545,6 +545,338 @@ async function init() {
         }
     ];
 
+    function buildStudentsLabel(base, offset) {
+        return `${(base + offset * 0.4).toFixed(1)}k`;
+    }
+
+    function buildOutline(topic, catalog) {
+        const outline = [
+            { title: `${catalog.provider}：${topic.title}`, url: topic.url }
+        ];
+
+        if (catalog.docsUrl && catalog.docsUrl !== topic.url) {
+            outline.push({ title: `${catalog.provider}：官方文档`, url: catalog.docsUrl });
+        }
+
+        if (catalog.guideUrl && catalog.guideUrl !== topic.url && catalog.guideUrl !== catalog.docsUrl) {
+            outline.push({ title: `${catalog.provider}：学习指南`, url: catalog.guideUrl });
+        }
+
+        return outline.slice(0, 3);
+    }
+
+    function buildGeneratedResources() {
+        const catalogs = [
+            {
+                category: '前端实战',
+                icon: 'component',
+                emoji: '⚛️',
+                color: 'sky',
+                provider: 'React',
+                docsUrl: 'https://react.dev/learn',
+                guideUrl: 'https://react.dev/reference/react',
+                baseStudents: 4.8,
+                topics: [
+                    { title: 'React 组件与 JSX 基础', desc: '掌握组件拆分、Props 传值与 JSX 语法，建立 React 开发思维。', url: 'https://react.dev/learn/your-first-component', level: '入门', duration: '2-3 小时' },
+                    { title: 'React Hooks 核心用法', desc: '从 useState、useEffect 到自定义 Hook，掌握函数式组件状态管理。', url: 'https://react.dev/learn/state-a-components-memory', level: '入门-进阶', duration: '3-5 小时' },
+                    { title: 'React 表单与受控组件', desc: '学会管理输入框、表单提交与即时校验，适合登录注册场景。', url: 'https://react.dev/reference/react-dom/components/input', level: '入门', duration: '2-4 小时' },
+                    { title: 'React Router 路由管理', desc: '学习页面切换、动态路由和嵌套路由，搭建单页应用结构。', url: 'https://reactrouter.com/en/main/start/tutorial', level: '进阶', duration: '3-5 小时' },
+                    { title: 'React 状态管理进阶', desc: '了解 Context 与 Redux 的使用场景，规范管理全局状态。', url: 'https://redux.js.org/tutorials/essentials/part-1-overview-concepts', level: '进阶', duration: '4-6 小时' },
+                    { title: 'Next.js 全栈开发入门', desc: '理解文件路由、服务端渲染与全栈目录结构。', url: 'https://nextjs.org/learn', level: '进阶', duration: '6-8 小时' }
+                ]
+            },
+            {
+                category: '前端实战',
+                icon: 'layers-3',
+                emoji: '💚',
+                color: 'emerald',
+                provider: 'Vue',
+                docsUrl: 'https://cn.vuejs.org/guide/introduction.html',
+                guideUrl: 'https://cn.vuejs.org/tutorial/',
+                baseStudents: 4.6,
+                topics: [
+                    { title: 'Vue3 核心语法入门', desc: '从模板语法、响应式到条件渲染，快速上手 Vue3。', url: 'https://cn.vuejs.org/guide/introduction.html', level: '入门', duration: '2-4 小时' },
+                    { title: 'Composition API 实战', desc: '用 setup、ref、reactive 组织更清晰的组件逻辑。', url: 'https://cn.vuejs.org/guide/extras/composition-api-faq.html', level: '入门-进阶', duration: '3-5 小时' },
+                    { title: 'Pinia 状态管理', desc: '掌握状态仓库的定义、读取与持久化，适合中型项目。', url: 'https://pinia.vuejs.org/zh/getting-started.html', level: '进阶', duration: '2-4 小时' },
+                    { title: 'Vue Router 路由系统', desc: '学习前端路由守卫、参数传递与嵌套路由配置。', url: 'https://router.vuejs.org/zh/introduction.html', level: '进阶', duration: '3-5 小时' },
+                    { title: 'Vue 组件通信模式', desc: '掌握 props、emit、provide/inject 等常见通信方式。', url: 'https://cn.vuejs.org/guide/components/props.html', level: '进阶', duration: '2-4 小时' },
+                    { title: 'Vue 工程化与构建部署', desc: '了解 Vite、打包优化与项目上线流程。', url: 'https://cn.vuejs.org/guide/scaling-up/tooling.html', level: '进阶', duration: '3-5 小时' }
+                ]
+            },
+            {
+                category: '开发效率',
+                icon: 'rocket',
+                emoji: '🚀',
+                color: 'violet',
+                provider: '前端工程化',
+                docsUrl: 'https://vite.dev/guide/',
+                guideUrl: 'https://webpack.js.org/guides/',
+                baseStudents: 3.9,
+                topics: [
+                    { title: 'Vite 快速构建项目', desc: '理解冷启动、热更新与现代前端开发体验。', url: 'https://vite.dev/guide/', level: '入门', duration: '1-2 小时' },
+                    { title: 'Webpack 打包原理入门', desc: '掌握入口、输出、loader 与 plugin 的基本概念。', url: 'https://webpack.js.org/guides/getting-started/', level: '进阶', duration: '3-5 小时' },
+                    { title: 'npm 与包管理规范', desc: '学习依赖安装、脚本命令、版本管理和 package.json。', url: 'https://docs.npmjs.com/about-npm', level: '入门', duration: '2-3 小时' },
+                    { title: 'ESLint 与代码规范', desc: '统一团队代码风格，减少低级错误。', url: 'https://eslint.org/docs/latest/use/getting-started', level: '入门', duration: '2-3 小时' },
+                    { title: 'Prettier 自动格式化', desc: '用统一格式提升协作效率，减少无效代码冲突。', url: 'https://prettier.io/docs/en/', level: '入门', duration: '1-2 小时' },
+                    { title: 'Lighthouse 性能优化', desc: '从性能、无障碍和最佳实践三方面优化网页。', url: 'https://developer.chrome.com/docs/lighthouse/overview', level: '进阶', duration: '2-4 小时' }
+                ]
+            },
+            {
+                category: '编程开发',
+                icon: 'file-code-2',
+                emoji: '🐍',
+                color: 'blue',
+                provider: 'Python',
+                docsUrl: 'https://docs.python.org/zh-cn/3/tutorial/',
+                guideUrl: 'https://docs.python.org/zh-cn/3/library/',
+                baseStudents: 5.1,
+                topics: [
+                    { title: 'Python 语法快速入门', desc: '变量、条件、循环、函数等核心语法一次掌握。', url: 'https://docs.python.org/zh-cn/3/tutorial/introduction.html', level: '入门', duration: '3-5 小时' },
+                    { title: 'Python 面向对象基础', desc: '学习类、对象、继承与封装，构建更复杂程序。', url: 'https://docs.python.org/zh-cn/3/tutorial/classes.html', level: '入门-进阶', duration: '3-4 小时' },
+                    { title: 'Python 文件与异常处理', desc: '掌握文件读写、路径操作和异常捕获。', url: 'https://docs.python.org/zh-cn/3/tutorial/inputoutput.html', level: '入门', duration: '2-3 小时' },
+                    { title: 'Flask Web 开发入门', desc: '搭建轻量 Web 服务，理解路由、模板和请求处理。', url: 'https://flask.palletsprojects.com/en/stable/quickstart/', level: '进阶', duration: '4-6 小时' },
+                    { title: 'Django 官方教程', desc: '学习完整 Web 项目开发流程，适合后端项目实战。', url: 'https://docs.djangoproject.com/zh-hans/5.0/intro/tutorial01/', level: '进阶', duration: '6-10 小时' },
+                    { title: 'Pandas 数据处理入门', desc: '掌握表格数据清洗、统计与导出，为数据分析打基础。', url: 'https://pandas.pydata.org/docs/getting_started/intro_tutorials/index.html', level: '进阶', duration: '4-6 小时' }
+                ]
+            },
+            {
+                category: '后端技术',
+                icon: 'coffee',
+                emoji: '☕',
+                color: 'orange',
+                provider: 'Java',
+                docsUrl: 'https://dev.java/learn/',
+                guideUrl: 'https://spring.io/guides',
+                baseStudents: 4.4,
+                topics: [
+                    { title: 'Java 语法与面向对象', desc: '学习 Java 基础语法、类、对象和集合框架。', url: 'https://dev.java/learn/', level: '入门', duration: '6-10 小时' },
+                    { title: 'Maven 项目管理入门', desc: '掌握依赖管理、构建打包与项目目录规范。', url: 'https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html', level: '入门', duration: '2-3 小时' },
+                    { title: 'Spring Boot 快速搭建 API', desc: '构建 REST 服务，理解控制器与自动配置。', url: 'https://spring.io/guides/gs/rest-service/', level: '进阶', duration: '3-5 小时' },
+                    { title: 'Spring Data JPA 持久化', desc: '学习实体映射、仓库接口与数据库访问。', url: 'https://spring.io/guides/gs/accessing-data-jpa/', level: '进阶', duration: '3-5 小时' },
+                    { title: 'JUnit 单元测试基础', desc: '给 Java 服务写测试，减少回归问题。', url: 'https://junit.org/junit5/docs/current/user-guide/', level: '进阶', duration: '2-4 小时' },
+                    { title: 'Spring Security 初识', desc: '了解认证授权与接口访问控制的基本思路。', url: 'https://spring.io/guides/topicals/spring-security-architecture/', level: '进阶', duration: '3-5 小时' }
+                ]
+            },
+            {
+                category: '后端技术',
+                icon: 'cpu',
+                emoji: '🐹',
+                color: 'cyan',
+                provider: 'Go',
+                docsUrl: 'https://go.dev/tour/welcome/1',
+                guideUrl: 'https://go.dev/doc/effective_go',
+                baseStudents: 3.8,
+                topics: [
+                    { title: 'Go 语言 Tour 入门', desc: '从变量、函数到切片与映射，快速熟悉 Go 的语法风格。', url: 'https://go.dev/tour/welcome/1', level: '入门', duration: '3-5 小时' },
+                    { title: 'Go 并发基础', desc: '理解 goroutine 与 channel，体验高并发编程。', url: 'https://go.dev/tour/concurrency/1', level: '进阶', duration: '3-5 小时' },
+                    { title: 'Gin Web 框架上手', desc: '搭建 REST API，学习路由与中间件的写法。', url: 'https://gin-gonic.com/zh-cn/docs/quickstart/', level: '进阶', duration: '2-4 小时' },
+                    { title: 'GORM 数据库操作', desc: '掌握模型定义、查询与迁移，提升数据库开发效率。', url: 'https://gorm.io/zh_CN/docs/', level: '进阶', duration: '3-5 小时' },
+                    { title: 'Go 访问数据库', desc: '学习 database/sql 的基本使用与连接管理。', url: 'https://go.dev/doc/database/open-handle', level: '进阶', duration: '2-4 小时' },
+                    { title: 'gRPC Go 快速实践', desc: '了解 RPC 通信模式和服务定义流程。', url: 'https://grpc.io/docs/languages/go/quickstart/', level: '进阶', duration: '4-6 小时' }
+                ]
+            },
+            {
+                category: '数据库',
+                icon: 'database-zap',
+                emoji: '🗃️',
+                color: 'emerald',
+                provider: '数据库专题',
+                docsUrl: 'https://dev.mysql.com/doc/',
+                guideUrl: 'https://redis.io/docs/latest/develop/get-started/',
+                baseStudents: 4.7,
+                topics: [
+                    { title: 'MySQL 基础查询与建表', desc: '掌握关系型数据库的建表、增删改查和约束。', url: 'https://dev.mysql.com/doc/mysql-getting-started/en/', level: '入门', duration: '4-6 小时' },
+                    { title: 'MySQL 索引与查询优化', desc: '理解 B+ 树索引、执行计划和慢查询优化。', url: 'https://dev.mysql.com/doc/refman/8.0/en/mysql-indexes.html', level: '进阶', duration: '3-5 小时' },
+                    { title: 'MySQL 事务与隔离级别', desc: '学习事务、锁与并发控制，保证数据一致性。', url: 'https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-model.html', level: '进阶', duration: '3-4 小时' },
+                    { title: 'Redis 缓存入门', desc: '掌握 key-value 存储、过期策略和常见缓存场景。', url: 'https://redis.io/docs/latest/develop/get-started/', level: '入门', duration: '2-4 小时' },
+                    { title: 'MongoDB CRUD 基础', desc: '理解文档数据库的数据模型与查询方式。', url: 'https://www.mongodb.com/docs/manual/crud/', level: '入门', duration: '3-5 小时' },
+                    { title: 'Prisma 数据建模基础', desc: '学习现代 ORM 的模型定义和数据库迁移流程。', url: 'https://www.prisma.io/docs/orm/prisma-schema/overview', level: '进阶', duration: '2-4 小时' }
+                ]
+            },
+            {
+                category: '编程开发',
+                icon: 'waypoints',
+                emoji: '🧮',
+                color: 'amber',
+                provider: '算法与数据结构',
+                docsUrl: 'https://oi-wiki.org/',
+                guideUrl: 'https://labuladong.online/algo/',
+                baseStudents: 3.5,
+                topics: [
+                    { title: '数组与链表基础', desc: '理解线性结构的访问特点与常见操作题型。', url: 'https://oi-wiki.org/ds/array/', level: '入门', duration: '3-4 小时' },
+                    { title: '栈与队列应用', desc: '掌握后进先出与先进先出的典型场景。', url: 'https://oi-wiki.org/ds/stack/', level: '入门', duration: '2-3 小时' },
+                    { title: '哈希表与集合', desc: '学习高效查找、去重与映射问题的解法。', url: 'https://oi-wiki.org/ds/hash/', level: '入门-进阶', duration: '2-4 小时' },
+                    { title: '树与二叉搜索树', desc: '理解递归遍历、层序遍历和树形结构的思考方式。', url: 'https://oi-wiki.org/ds/bst/', level: '进阶', duration: '4-6 小时' },
+                    { title: '排序与二分查找', desc: '掌握常见排序算法和二分的边界处理。', url: 'https://oi-wiki.org/basic/binary-search/', level: '入门-进阶', duration: '3-5 小时' },
+                    { title: '动态规划入门', desc: '理解状态定义、转移方程和经典 DP 题型。', url: 'https://labuladong.online/algo/dynamic-programming/series/', level: '进阶', duration: '6-8 小时' }
+                ]
+            },
+            {
+                category: '网络基础',
+                icon: 'network',
+                emoji: '🌍',
+                color: 'blue',
+                provider: '网络专题',
+                docsUrl: 'https://developer.mozilla.org/zh-CN/docs/Web/HTTP',
+                guideUrl: 'https://www.cloudflare.com/learning/',
+                baseStudents: 4.2,
+                topics: [
+                    { title: 'TCP/IP 基础原理', desc: '理解 IP、TCP、端口与网络通信的基本流程。', url: 'https://www.cloudflare.com/learning/ddos/glossary/tcp-ip/', level: '入门', duration: '2-4 小时' },
+                    { title: 'DNS 解析机制', desc: '搞懂域名到 IP 的解析过程和常见问题。', url: 'https://www.cloudflare.com/learning/dns/what-is-dns/', level: '入门', duration: '1-2 小时' },
+                    { title: 'HTTPS 与 TLS 安全', desc: '学习证书、握手与加密连接的工作方式。', url: 'https://developer.mozilla.org/zh-CN/docs/Glossary/HTTPS', level: '入门-进阶', duration: '2-3 小时' },
+                    { title: 'WebSocket 实时通信', desc: '了解长连接机制及聊天、通知类应用场景。', url: 'https://developer.mozilla.org/zh-CN/docs/Web/API/WebSockets_API', level: '进阶', duration: '2-4 小时' },
+                    { title: 'CDN 与静态资源加速', desc: '理解缓存节点分发机制，提升网站访问速度。', url: 'https://www.cloudflare.com/learning/cdn/what-is-a-cdn/', level: '入门', duration: '1-2 小时' },
+                    { title: 'Nginx 反向代理入门', desc: '学会把前后端服务通过 Nginx 统一对外暴露。', url: 'https://nginx.org/en/docs/beginners_guide.html', level: '进阶', duration: '2-4 小时' }
+                ]
+            },
+            {
+                category: '安全与鉴权',
+                icon: 'shield',
+                emoji: '🔒',
+                color: 'rose',
+                provider: 'Web 安全',
+                docsUrl: 'https://owasp.org/www-project-top-ten/',
+                guideUrl: 'https://developer.mozilla.org/zh-CN/docs/Web/Security',
+                baseStudents: 3.6,
+                topics: [
+                    { title: 'XSS 漏洞与防护', desc: '理解脚本注入的原理和前后端常见防护方式。', url: 'https://developer.mozilla.org/zh-CN/docs/Glossary/Cross-site_scripting', level: '入门', duration: '2-3 小时' },
+                    { title: 'CSRF 漏洞与防护', desc: '掌握跨站请求伪造的场景与令牌防御思路。', url: 'https://developer.mozilla.org/zh-CN/docs/Glossary/CSRF', level: '入门', duration: '1-2 小时' },
+                    { title: 'SQL 注入基础与防御', desc: '理解拼接 SQL 的风险和参数化查询的重要性。', url: 'https://owasp.org/www-community/attacks/SQL_Injection', level: '入门-进阶', duration: '2-3 小时' },
+                    { title: '认证授权与 RBAC', desc: '学习角色权限设计与接口访问控制模型。', url: 'https://auth0.com/docs/get-started/identity-fundamentals/authentication-and-authorization', level: '进阶', duration: '3-4 小时' },
+                    { title: '密码存储与哈希实践', desc: '为什么不能明文存密码，以及 bcrypt 等算法的作用。', url: 'https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html', level: '进阶', duration: '1-2 小时' },
+                    { title: 'JWT 安全最佳实践', desc: '掌握 token 过期、签名、刷新和前端存储注意点。', url: 'https://auth0.com/docs/secure/tokens/token-best-practices', level: '进阶', duration: '2-3 小时' }
+                ]
+            },
+            {
+                category: '运维部署',
+                icon: 'cloud',
+                emoji: '☁️',
+                color: 'cyan',
+                provider: '运维部署',
+                docsUrl: 'https://docs.docker.com/get-started/',
+                guideUrl: 'https://docs.github.com/zh/actions',
+                baseStudents: 3.7,
+                topics: [
+                    { title: 'Docker 容器化入门', desc: '掌握镜像、容器、端口映射与常见开发流程。', url: 'https://docs.docker.com/get-started/', level: '入门', duration: '3-5 小时' },
+                    { title: 'Docker Compose 多服务编排', desc: '让数据库、后端、前端本地联动启动。', url: 'https://docs.docker.com/compose/', level: '进阶', duration: '2-4 小时' },
+                    { title: 'GitHub Actions 自动部署', desc: '学习 CI/CD 基础，把测试和构建自动化。', url: 'https://docs.github.com/zh/actions/quickstart', level: '进阶', duration: '3-5 小时' },
+                    { title: 'PM2 管理 Node 服务', desc: '掌握进程守护、日志查看与重启命令。', url: 'https://pm2.keymetrics.io/docs/usage/quick-start/', level: '入门', duration: '1-2 小时' },
+                    { title: 'Linux 服务器部署 Node 应用', desc: '了解环境安装、端口开放与进程管理。', url: 'https://nodejs.org/en/docs/guides/nodejs-docker-webapp', level: '进阶', duration: '3-5 小时' },
+                    { title: 'Nginx 部署静态站点', desc: '学习静态资源托管和反向代理配置。', url: 'https://nginx.org/en/docs/http/ngx_http_core_module.html', level: '进阶', duration: '2-4 小时' }
+                ]
+            },
+            {
+                category: 'AI 技术',
+                icon: 'bot',
+                emoji: '🤖',
+                color: 'violet',
+                provider: 'AI 应用',
+                docsUrl: 'https://platform.deepseek.com/',
+                guideUrl: 'https://www.promptingguide.ai/zh',
+                baseStudents: 5.4,
+                topics: [
+                    { title: 'DeepSeek API 接入实践', desc: '学习密钥配置、接口调用与上下文传参方式。', url: 'https://platform.deepseek.com/', level: '入门', duration: '2-3 小时' },
+                    { title: 'Prompt 提示词设计进阶', desc: '提升指令清晰度和输出稳定性，让 AI 更可控。', url: 'https://www.promptingguide.ai/zh/techniques', level: '入门-进阶', duration: '2-4 小时' },
+                    { title: 'LangChain 基础串联', desc: '理解提示词模板、链式调用和工具调用。', url: 'https://js.langchain.com/docs/get_started/introduction', level: '进阶', duration: '4-6 小时' },
+                    { title: 'RAG 检索增强生成入门', desc: '了解知识库问答的核心流程和常见组件。', url: 'https://js.langchain.com/docs/concepts/rag/', level: '进阶', duration: '4-6 小时' },
+                    { title: 'Hugging Face 模型生态', desc: '学会查找模型、数据集和推理接口。', url: 'https://huggingface.co/docs', level: '入门', duration: '2-4 小时' },
+                    { title: 'Streamlit AI 小应用开发', desc: '快速搭建可交互的 AI 原型页面。', url: 'https://docs.streamlit.io/get-started', level: '进阶', duration: '3-5 小时' }
+                ]
+            },
+            {
+                category: '设计美学',
+                icon: 'palette',
+                emoji: '🎯',
+                color: 'pink',
+                provider: '设计体系',
+                docsUrl: 'https://www.figma.com/resource-library/design-basics/',
+                guideUrl: 'https://m3.material.io/',
+                baseStudents: 3.4,
+                topics: [
+                    { title: 'Figma 设计基础', desc: '学会使用 Frame、Auto Layout 和组件进行界面设计。', url: 'https://www.figma.com/resource-library/design-basics/', level: '入门', duration: '2-4 小时' },
+                    { title: '设计系统与组件规范', desc: '理解颜色、字体、间距和组件复用的统一规范。', url: 'https://m3.material.io/foundations/design-system/overview', level: '进阶', duration: '2-3 小时' },
+                    { title: '网页排版与信息层级', desc: '让页面内容更易读，重点更清晰。', url: 'https://www.figma.com/resource-library/design-basics/typography/', level: '入门', duration: '1-2 小时' },
+                    { title: '颜色系统与视觉一致性', desc: '学会配色逻辑，避免页面显得杂乱。', url: 'https://m3.material.io/styles/color/system/overview', level: '入门', duration: '1-2 小时' },
+                    { title: '无障碍设计基础', desc: '理解对比度、键盘操作与可访问性设计要求。', url: 'https://www.w3.org/WAI/fundamentals/accessibility-intro/', level: '进阶', duration: '2-3 小时' },
+                    { title: '移动端界面设计原则', desc: '掌握触控操作、间距与卡片式布局要点。', url: 'https://m3.material.io/foundations/layout/applying-layout/window-size-classes', level: '进阶', duration: '2-3 小时' }
+                ]
+            },
+            {
+                category: '测试与质量',
+                icon: 'clipboard-check',
+                emoji: '🧪',
+                color: 'lime',
+                provider: '测试专题',
+                docsUrl: 'https://jestjs.io/docs/getting-started',
+                guideUrl: 'https://playwright.dev/docs/intro',
+                baseStudents: 3.3,
+                topics: [
+                    { title: 'Jest 单元测试入门', desc: '为函数和模块补测试，降低改动风险。', url: 'https://jestjs.io/docs/getting-started', level: '入门', duration: '2-4 小时' },
+                    { title: 'Vitest 前端测试实践', desc: '在 Vite 项目里快速跑起组件与逻辑测试。', url: 'https://vitest.dev/guide/', level: '入门-进阶', duration: '2-4 小时' },
+                    { title: 'Playwright 端到端测试', desc: '模拟真实用户流程，覆盖登录和关键交互。', url: 'https://playwright.dev/docs/intro', level: '进阶', duration: '3-5 小时' },
+                    { title: 'Cypress 页面自动化测试', desc: '学习浏览器内调试测试的方式和断言写法。', url: 'https://docs.cypress.io/guides/overview/why-cypress', level: '进阶', duration: '3-5 小时' },
+                    { title: 'Postman 自动化接口测试', desc: '让接口回归测试与环境变量配置更规范。', url: 'https://learning.postman.com/docs/tests-and-scripts/write-scripts/test-scripts/', level: '进阶', duration: '2-3 小时' },
+                    { title: 'Mock Service Worker 模拟接口', desc: '前后端并行开发时，用 Mock 提升效率。', url: 'https://mswjs.io/docs/getting-started', level: '进阶', duration: '2-4 小时' }
+                ]
+            },
+            {
+                category: '操作系统',
+                icon: 'terminal-square',
+                emoji: '💻',
+                color: 'slate',
+                provider: 'Linux 与系统',
+                docsUrl: 'https://linuxjourney.com/',
+                guideUrl: 'https://www.gnu.org/software/bash/manual/bash.html',
+                baseStudents: 3.2,
+                topics: [
+                    { title: 'Linux 命令行基础', desc: '掌握目录切换、文件查看、搜索与编辑的常用命令。', url: 'https://linuxjourney.com/', level: '入门', duration: '2-4 小时' },
+                    { title: 'Linux 文件权限与用户', desc: '理解 chmod、chown、用户组和权限模型。', url: 'https://linuxjourney.com/lesson/file-permissions', level: '入门', duration: '1-2 小时' },
+                    { title: 'Bash Shell 脚本入门', desc: '学会写自动化脚本处理重复任务。', url: 'https://www.gnu.org/software/bash/manual/bash.html#Shell-Scripts', level: '进阶', duration: '2-4 小时' },
+                    { title: '进程与服务管理', desc: '理解进程状态、前后台任务和系统服务。', url: 'https://www.freedesktop.org/software/systemd/man/latest/systemctl.html', level: '进阶', duration: '2-3 小时' },
+                    { title: '日志排查与系统监控', desc: '学会查看日志、端口和资源占用，提升运维排错能力。', url: 'https://ubuntu.com/tutorials/viewing-and-monitoring-log-files', level: '进阶', duration: '2-3 小时' },
+                    { title: 'Windows PowerShell 基础', desc: '掌握 Windows 环境下的脚本与命令操作。', url: 'https://learn.microsoft.com/zh-cn/powershell/scripting/overview', level: '入门', duration: '2-4 小时' }
+                ]
+            },
+            {
+                category: '全栈联调',
+                icon: 'cable',
+                emoji: '🔗',
+                color: 'indigo',
+                provider: '全栈联调',
+                docsUrl: 'https://developer.mozilla.org/zh-CN/docs/Web/API/Fetch_API',
+                guideUrl: 'https://learning.postman.com/',
+                baseStudents: 3.8,
+                topics: [
+                    { title: 'JSON 数据结构与接口约定', desc: '统一前后端字段命名和返回结构，减少联调歧义。', url: 'https://developer.mozilla.org/zh-CN/docs/Learn/JavaScript/Objects/JSON', level: '入门', duration: '1-2 小时' },
+                    { title: '前后端跨域问题处理', desc: '理解 CORS、预检请求和本地代理策略。', url: 'https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CORS', level: '进阶', duration: '2-3 小时' },
+                    { title: '接口文档编写规范', desc: '学会写清楚请求参数、返回体和错误码。', url: 'https://swagger.io/resources/articles/documenting-apis-with-swagger/', level: '入门', duration: '2-3 小时' },
+                    { title: 'OpenAPI 与 Swagger 入门', desc: '用标准格式描述接口，方便测试与联调。', url: 'https://swagger.io/specification/', level: '进阶', duration: '2-4 小时' },
+                    { title: 'Mock 数据与并行开发', desc: '当前端先行时，用假数据提前验证页面流程。', url: 'https://mswjs.io/docs/getting-started/mocks', level: '入门', duration: '2-3 小时' },
+                    { title: '接口错误排查工作流', desc: '结合浏览器 Network、日志与 Postman 高效定位问题。', url: 'https://developer.chrome.com/docs/devtools/network/', level: '进阶', duration: '2-3 小时' }
+                ]
+            }
+        ];
+
+        return catalogs.flatMap((catalog, catalogIndex) => {
+            return catalog.topics.map((topic, topicIndex) => ({
+                title: topic.title,
+                desc: topic.desc,
+                category: catalog.category,
+                icon: catalog.icon,
+                emoji: catalog.emoji,
+                color: catalog.color,
+                students: buildStudentsLabel(catalog.baseStudents, catalogIndex * 6 + topicIndex),
+                url: topic.url,
+                provider: catalog.provider,
+                level: topic.level,
+                duration: topic.duration,
+                outline: buildOutline(topic, catalog)
+            }));
+        });
+    }
+
+    seedResources.push(...buildGeneratedResources());
+
     const existingTitleRows = queryAll('SELECT title FROM resources');
     const existingTitles = new Set(existingTitleRows.map((r) => r.title));
     const insertStmt = db.prepare(

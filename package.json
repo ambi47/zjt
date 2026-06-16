@@ -5,13 +5,15 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
-    "dev": "node server/index.js"
+    "dev": "node server/index.js",
+    "build:ppt": "node scripts/generate-roadshow-ppt.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
+    "pptxgenjs": "^4.0.1",
     "sql.js": "^1.10.3",
     "uuid": "^9.0.1"
   }
