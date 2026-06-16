@@ -15,6 +15,8 @@ const appState = {
     isLoggedIn: false,
     resources: [],
     learningPaths: [],
+    learningPathGroups: [],
+    selectedGroup: '全部',
     chatHistory: []
 };
 
@@ -351,17 +353,101 @@ async function loadRecommendations() {
 
 async function loadLearningPaths() {
     try {
-        const response = await apiRequest('/api/path/list');
-        if (response.code === 200) {
-            appState.learningPaths = response.data.items;
-            renderLearningPaths(appState.learningPaths);
+        const [pathsResponse, groupsResponse] = await Promise.all([
+            apiRequest('/api/path/list'),
+            apiRequest('/api/path/groups')
+        ]);
+        
+        if (pathsResponse.code === 200) {
+            appState.learningPaths = pathsResponse.data.items;
         }
+        
+        if (groupsResponse.code === 200) {
+            appState.learningPathGroups = groupsResponse.data;
+            // 如果当前选中的组不存在或为"全部"，则选择第一个分组
+            if (!appState.learningPathGroups.includes(appState.selectedGroup) || appState.selectedGroup === '全部') {
+                appState.selectedGroup = appState.learningPathGroups.length > 0 ? appState.learningPathGroups[0] : '默认分组';
+            }
+        }
+        
+        renderLearningPathGroups();
+        renderLearningPaths(appState.learningPaths);
     } catch (error) {
         console.error('加载学习路径失败:', error);
     }
 }
 
+async function loadLearningPathGroups() {
+    try {
+        const response = await apiRequest('/api/path/groups');
+        if (response.code === 200) {
+            appState.learningPathGroups = response.data;
+            renderLearningPathGroups();
+        }
+    } catch (error) {
+        console.error('加载学习路径分组失败:', error);
+    }
+}
+
 // ==================== 渲染函数 ====================
+
+function renderLearningPathGroups() {
+    const container = document.getElementById('path-groups-container');
+    if (!container) return;
+    
+    const groups = appState.learningPathGroups.length > 0 ? appState.learningPathGroups : ['默认分组'];
+    
+    container.innerHTML = groups.map(group => {
+        const isSelected = appState.selectedGroup === group || (appState.selectedGroup === '全部' && group === groups[0]);
+        const isDefault = group === '默认分组';
+        return `
+            <div class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                isSelected 
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-100' 
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600'
+            }">
+                <button onclick="selectGroup('${escapeHtml(group)}')" class="flex-1 text-left">
+                    ${escapeHtml(group)}
+                </button>
+                ${!isDefault ? `
+                    <button onclick="deleteGroup('${escapeHtml(group)}')" class="p-1 rounded-full hover:bg-red-100 transition-colors" title="删除分组">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+    lucide.createIcons();
+}
+
+function selectGroup(groupName) {
+    appState.selectedGroup = groupName;
+    renderLearningPathGroups();
+    renderLearningPaths(appState.learningPaths);
+}
+
+async function deleteGroup(groupName) {
+    if (!confirm(`确定要删除分组“${groupName}”吗？该分组下的所有学习路径将移至“默认分组”。`)) {
+        return;
+    }
+    
+    try {
+        const response = await apiRequest(`/api/path/groups/${encodeURIComponent(groupName)}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.code === 200) {
+            // 如果删除的是当前选中的分组，切换到默认分组
+            if (appState.selectedGroup === groupName) {
+                appState.selectedGroup = '默认分组';
+            }
+            await loadLearningPaths();
+        }
+    } catch (error) {
+        console.error('删除分组失败:', error);
+        alert('删除分组失败，请重试');
+    }
+}
 
 function renderLearningPath(path) {
     const container = document.getElementById('learning-path-tracker');
@@ -562,6 +648,17 @@ function closeResourceModal(event) {
 
 window.openResourceDetail = openResourceDetail;
 window.closeResourceModal = closeResourceModal;
+window.openPathModal = openPathModal;
+window.closePathModal = closePathModal;
+window.savePath = savePath;
+window.editPath = editPath;
+window.deletePath = deletePath;
+window.selectLearningPath = selectLearningPath;
+window.updateLearningPathProgress = updateLearningPathProgress;
+window.toggleLearningPathItem = toggleLearningPathItem;
+window.selectGroup = selectGroup;
+window.deleteGroup = deleteGroup;
+window.addNewGroup = addNewGroup;
 
 function renderRecommendations(data) {
     const grid = document.getElementById('recommendation-grid');
@@ -606,14 +703,32 @@ function renderRecommendations(data) {
 function renderLearningPaths(paths) {
     const container = document.getElementById('learning-paths-container');
     if (!container) return;
+    
+    const filteredPaths = paths.filter(path => path.group_name === appState.selectedGroup);
+    
+    if (filteredPaths.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-12">
+                <i data-lucide="folder-open" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+                <p class="text-gray-500">该分组下暂无学习路径</p>
+            </div>
+        `;
+        lucide.createIcons();
+        return;
+    }
 
-    container.innerHTML = paths.map((path, index) => {
+    container.innerHTML = filteredPaths.map((path, index) => {
         const isCompleted = path.status === 'completed';
         const isInProgress = path.status === 'in_progress';
         const statusClass = isCompleted ? 'bg-green-50 text-green-600' : (isInProgress ? 'bg-blue-50 text-blue-600' : 'bg-gray-50 text-gray-400');
         const statusText = isCompleted ? '已完成' : (isInProgress ? `进行中 ${path.progress}%` : '未开始');
         const dotClass = isCompleted ? 'bg-blue-600' : (isInProgress ? 'bg-blue-600' : 'bg-gray-200');
         const borderClass = isInProgress ? 'border-l-4 border-l-blue-600' : '';
+        
+        // 计算已完成项目数
+        const items = path.items || [];
+        const completedCount = items.filter(item => item && item.completed).length;
+        const totalCount = items.length;
 
         return `
             <div class="relative pl-20">
@@ -621,8 +736,12 @@ function renderLearningPaths(paths) {
                 <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm ${borderClass}">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">阶段 0${path.stage}</span>
-                            <h3 class="text-xl font-bold mt-1 ${!isCompleted && !isInProgress ? 'text-gray-400' : ''}">${path.title}</h3>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">阶段 0${path.stage}</span>
+                                <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded">${escapeHtml(path.group_name || '默认分组')}</span>
+                                ${totalCount > 0 ? `<span class="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 rounded">${completedCount}/${totalCount} 已完成</span>` : ''}
+                            </div>
+                            <h3 class="text-xl font-bold ${!isCompleted && !isInProgress ? 'text-gray-400' : ''}">${escapeHtml(path.title)}</h3>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="px-3 py-1 ${statusClass} text-xs font-bold rounded-full">${statusText}</span>
@@ -636,22 +755,28 @@ function renderLearningPaths(paths) {
                             </div>
                         </div>
                     </div>
-                    ${path.items ? `
+                    ${items && items.length > 0 ? `
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        ${path.items.map((item, i) => `
-                            <div class="p-3 ${isCompleted || (isInProgress && i < 1) ? 'bg-gray-50' : (isInProgress && i === 1 ? 'bg-blue-50' : 'bg-white')} rounded-xl border border-gray-100 flex items-center gap-3">
-                                <i data-lucide="${isCompleted || (isInProgress && i < 1) ? 'check-circle' : (isInProgress && i === 1 ? 'clock' : 'circle')}" class="w-5 h-5 ${isCompleted || (isInProgress && i < 1) ? 'text-green-500' : (isInProgress && i === 1 ? 'text-blue-500' : 'text-gray-300')}"></i>
-                                <span class="text-sm ${isInProgress && i === 1 ? 'text-blue-700 font-medium' : 'text-gray-600'}">${item}</span>
+                        ${items.map((item, i) => {
+                            const itemText = typeof item === 'string' ? item : (item && item.text ? item.text : '');
+                            const itemCompleted = typeof item === 'object' && item && item.completed;
+                            return `
+                            <div class="p-3 ${itemCompleted ? 'bg-green-50' : (isInProgress ? 'bg-white' : 'bg-white')} rounded-xl border ${itemCompleted ? 'border-green-200' : 'border-gray-100'} flex items-center gap-3 cursor-pointer hover:border-blue-300 transition-colors"
+                                onclick="toggleLearningPathItem(${path.id}, ${i})">
+                                <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${itemCompleted ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-blue-500'}">
+                                    ${itemCompleted ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                                </div>
+                                <span class="text-sm ${itemCompleted ? 'text-gray-500 line-through' : 'text-gray-700'}">${escapeHtml(itemText)}</span>
                             </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                     ` : ''}
                     <div class="mt-4 flex gap-2">
-                        ${isInProgress ? `
-                            <button class="flex-1 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-sm font-bold transition-colors" disabled>当前学习中</button>
-                            <button onclick="updateLearningPathProgress(${path.id}, ${Math.min(100, (path.progress || 0) + 10)})" class="px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-xl text-sm font-bold transition-colors">+10%</button>
-                        ` : isCompleted ? `
+                        ${isCompleted ? `
                             <button class="flex-1 py-2 bg-gray-100 text-gray-400 rounded-xl text-sm font-bold transition-colors" disabled>已完成</button>
+                        ` : isInProgress ? `
+                            <button class="flex-1 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-sm font-bold transition-colors" disabled>当前学习中</button>
                         ` : `
                             <button onclick="selectLearningPath(${path.id})" class="flex-1 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-sm font-bold transition-colors">选择此路径</button>
                         `}
@@ -678,6 +803,21 @@ async function selectLearningPath(pathId) {
     } catch (error) {
         console.error('选择学习路径失败:', error);
         alert('选择学习路径失败');
+    }
+}
+
+async function toggleLearningPathItem(pathId, itemIndex) {
+    try {
+        const response = await apiRequest(`/api/path/${pathId}/toggle-item/${itemIndex}`, {
+            method: 'PUT'
+        });
+        
+        if (response.code === 200) {
+            await loadLearningPaths();
+            await loadDashboard();
+        }
+    } catch (error) {
+        console.error('更新学习项目失败:', error);
     }
 }
 
@@ -913,23 +1053,72 @@ function openPathModal(path = null) {
     const titleInput = document.getElementById('path-title');
     const stageInput = document.getElementById('path-stage');
     const itemsInput = document.getElementById('path-items');
+    const groupSelect = document.getElementById('path-group-name');
+    
+    // 更新分组下拉菜单
+    updateGroupSelect();
 
     if (path) {
         title.textContent = '编辑学习路径';
         idInput.value = path.id;
         titleInput.value = path.title;
         stageInput.value = path.stage;
-        itemsInput.value = (path.items || []).join('\n');
+        // 处理 items，兼容新旧格式
+        const items = path.items || [];
+        itemsInput.value = items.map(item => {
+            return typeof item === 'string' ? item : (item && item.text ? item.text : '');
+        }).join('\n');
+        // 选中当前路径的分组
+        groupSelect.value = path.group_name || '默认分组';
     } else {
         title.textContent = '创建学习路径';
         idInput.value = '';
         titleInput.value = '';
         stageInput.value = 1;
         itemsInput.value = '';
+        groupSelect.value = appState.selectedGroup || '默认分组';
     }
 
     modal.classList.remove('hidden');
     lucide.createIcons();
+}
+
+function updateGroupSelect() {
+    const groupSelect = document.getElementById('path-group-name');
+    if (!groupSelect) return;
+    
+    const groups = appState.learningPathGroups.length > 0 
+        ? appState.learningPathGroups 
+        : ['默认分组'];
+    
+    groupSelect.innerHTML = groups.map(group => 
+        `<option value="${escapeHtml(group)}">${escapeHtml(group)}</option>`
+    ).join('');
+}
+
+function addNewGroup() {
+    const newGroupInput = document.getElementById('path-new-group');
+    const groupSelect = document.getElementById('path-group-name');
+    
+    const newGroup = newGroupInput.value.trim();
+    if (!newGroup) {
+        alert('请输入分组名称');
+        return;
+    }
+    
+    if (appState.learningPathGroups.includes(newGroup)) {
+        alert('该分组已存在');
+        return;
+    }
+    
+    // 添加到分组列表
+    appState.learningPathGroups.push(newGroup);
+    // 更新分组下拉菜单
+    updateGroupSelect();
+    // 选中新添加的分组
+    groupSelect.value = newGroup;
+    // 清空输入框
+    newGroupInput.value = '';
 }
 
 function closePathModal() {
@@ -944,20 +1133,21 @@ async function savePath(event) {
     const title = document.getElementById('path-title').value.trim();
     const stage = parseInt(document.getElementById('path-stage').value);
     const itemsText = document.getElementById('path-items').value;
+    const groupName = document.getElementById('path-group-name').value;
     
     const items = itemsText.split('\n')
         .map(item => item.trim())
         .filter(item => item.length > 0);
 
     try {
-        console.log('Saving learning path:', { id, title, stage, items });
+        console.log('Saving learning path:', { id, title, stage, items, groupName });
         
         if (id) {
             // 更新现有路径
             const response = await apiRequest(`/api/path/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, stage, items })
+                body: JSON.stringify({ title, stage, items, group_name: groupName })
             });
             
             console.log('Update response:', response);
@@ -974,7 +1164,7 @@ async function savePath(event) {
             const response = await apiRequest('/api/path', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, stage, items, status: 'pending', progress: 0 })
+                body: JSON.stringify({ title, stage, items, status: 'pending', progress: 0, group_name: groupName })
             });
             
             console.log('Create response:', response);

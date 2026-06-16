@@ -101,6 +101,7 @@ async function init() {
             status TEXT NOT NULL,
             progress INTEGER,
             items_json TEXT NOT NULL DEFAULT '[]',
+            group_name TEXT NOT NULL DEFAULT '默认分组',
             created_at TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS recommendations (
@@ -121,6 +122,7 @@ async function init() {
     if (!hasColumn('resources', 'provider')) db.run('ALTER TABLE resources ADD COLUMN provider TEXT');
     if (!hasColumn('resources', 'level')) db.run('ALTER TABLE resources ADD COLUMN level TEXT');
     if (!hasColumn('resources', 'duration')) db.run('ALTER TABLE resources ADD COLUMN duration TEXT');
+    if (!hasColumn('learning_paths', 'group_name')) db.run("ALTER TABLE learning_paths ADD COLUMN group_name TEXT NOT NULL DEFAULT '默认分组'");
 
     const now = new Date().toISOString();
     const seedResources = [
@@ -783,16 +785,65 @@ async function getResourceById(id) {
 
 async function listLearningPaths() {
     await init();
-    return queryAll('SELECT * FROM learning_paths ORDER BY stage ASC').map((p) => ({
-        ...p,
-        items: JSON.parse(p.items_json || '[]')
-    }));
+    return queryAll('SELECT * FROM learning_paths ORDER BY stage ASC').map((p) => {
+        let items = [];
+        try {
+            items = JSON.parse(p.items_json || '[]');
+            // 兼容旧数据格式：字符串数组转对象数组
+            if (items.length > 0 && typeof items[0] === 'string') {
+                items = items.map(text => ({ text, completed: false }));
+            }
+        } catch (e) {
+            items = [];
+        }
+        return { ...p, items };
+    });
+}
+
+async function listLearningPathGroups() {
+    await init();
+    const rows = queryAll('SELECT DISTINCT group_name FROM learning_paths ORDER BY group_name ASC');
+    // 确保"默认分组"始终存在
+    const groups = rows.map(r => r.group_name);
+    if (!groups.includes('默认分组')) {
+        groups.unshift('默认分组');
+    }
+    return groups;
+}
+
+async function deleteLearningPathGroup(groupName) {
+    await init();
+    if (groupName === '默认分组') {
+        throw new Error('无法删除默认分组');
+    }
+    
+    // 将该分组下的所有学习路径移至默认分组
+    const stmt = db.prepare('UPDATE learning_paths SET group_name = ? WHERE group_name = ?');
+    stmt.bind(['默认分组', groupName]);
+    stmt.step();
+    stmt.free();
+    saveIfReady();
+    
+    return true;
 }
 
 async function getLearningPathById(id) {
     await init();
     const path = queryOne('SELECT * FROM learning_paths WHERE id = ?', [id]);
-    return path ? { ...path, items: JSON.parse(path.items_json || '[]') } : null;
+    if (!path) return null;
+    
+    let items = [];
+    try {
+        items = JSON.parse(path.items_json || '[]');
+        // 兼容旧数据格式：字符串数组转对象数组
+        if (items.length > 0 && typeof items[0] === 'string') {
+            items = items.map(text => ({ text, completed: false }));
+        }
+    } catch (e) {
+        items = [];
+    }
+    
+    return { ...path, items };
 }
 
 async function createLearningPath(payload) {
@@ -800,17 +851,24 @@ async function createLearningPath(payload) {
     const now = new Date().toISOString();
     console.log('createLearningPath called with payload:', payload);
     
+    // 处理 items：字符串数组转对象数组
+    let items = payload.items || [];
+    if (items.length > 0 && typeof items[0] === 'string') {
+        items = items.map(text => ({ text, completed: false }));
+    }
+    
     const stmt = db.prepare(`
-        INSERT INTO learning_paths (title, stage, status, progress, items_json, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO learning_paths (title, stage, status, progress, items_json, group_name, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
     
     const params = [
         payload.title,
         payload.stage !== undefined ? payload.stage : 1,
         payload.status || 'pending',
-        payload.progress !== undefined ? payload.progress : 0,
-        JSON.stringify(payload.items || []),
+        0, // 初始进度为0
+        JSON.stringify(items),
+        payload.group_name || '默认分组',
         now
     ];
     
@@ -841,7 +899,7 @@ async function updateLearningPath(id, payload) {
     
     const stmt = db.prepare(`
         UPDATE learning_paths 
-        SET title = ?, stage = ?, status = ?, progress = ?, items_json = ?
+        SET title = ?, stage = ?, status = ?, progress = ?, items_json = ?, group_name = ?
         WHERE id = ?
     `);
     
@@ -852,6 +910,7 @@ async function updateLearningPath(id, payload) {
     // 只有当 payload.progress 明确存在时才更新，否则保持原样
     const newProgress = payload.progress !== undefined ? payload.progress : existingPath.progress;
     const newItemsJson = payload.items !== undefined ? JSON.stringify(payload.items) : existingPath.items_json;
+    const newGroupName = payload.group_name !== undefined ? payload.group_name : existingPath.group_name;
     
     stmt.bind([
         newTitle,
@@ -859,6 +918,7 @@ async function updateLearningPath(id, payload) {
         newStatus,
         newProgress,
         newItemsJson,
+        newGroupName,
         id
     ]);
     stmt.step();
@@ -876,6 +936,40 @@ async function deleteLearningPath(id) {
     stmt.free();
     saveIfReady();
     return true;
+}
+
+async function toggleLearningPathItem(id, itemIndex) {
+    await init();
+    const existingPath = await getLearningPathById(id);
+    if (!existingPath) return null;
+    
+    // 切换项目完成状态
+    if (existingPath.items[itemIndex]) {
+        existingPath.items[itemIndex].completed = !existingPath.items[itemIndex].completed;
+    }
+    
+    // 计算新的进度
+    const totalItems = existingPath.items.length;
+    const completedItems = existingPath.items.filter(item => item.completed).length;
+    const progress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+    
+    // 确定新状态
+    let newStatus = existingPath.status;
+    if (progress === 100) {
+        newStatus = 'completed';
+    } else if (progress > 0 && existingPath.status === 'pending') {
+        newStatus = 'in_progress';
+    } else if (progress === 0 && existingPath.status !== 'pending') {
+        newStatus = 'pending';
+    }
+    
+    const stmt = db.prepare('UPDATE learning_paths SET status = ?, progress = ?, items_json = ? WHERE id = ?');
+    stmt.bind([newStatus, progress, JSON.stringify(existingPath.items), id]);
+    stmt.step();
+    stmt.free();
+    saveIfReady();
+    
+    return await getLearningPathById(id);
 }
 
 async function updateLearningPathStatus(id, status, progress = null) {
@@ -912,10 +1006,13 @@ module.exports = {
     getSchema,
     getResourceById,
     listLearningPaths,
+    listLearningPathGroups,
     getLearningPathById,
     createLearningPath,
     updateLearningPath,
     deleteLearningPath,
     updateLearningPathStatus,
+    toggleLearningPathItem,
+    deleteLearningPathGroup,
     listRecommendations
 };

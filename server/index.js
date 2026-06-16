@@ -486,6 +486,41 @@ app.get('/api/path/list', authenticateToken, async (req, res) => {
 });
 
 /**
+ * 获取学习路径分组列表
+ * GET /api/path/groups
+ */
+app.get('/api/path/groups', authenticateToken, async (req, res) => {
+    const groups = await dbStore.listLearningPathGroups();
+    res.json({
+        code: 200,
+        message: '获取成功',
+        data: groups
+    });
+});
+
+/**
+ * 删除学习路径分组
+ * DELETE /api/path/groups/:groupName
+ */
+app.delete('/api/path/groups/:groupName', authenticateToken, async (req, res) => {
+    try {
+        const groupName = decodeURIComponent(req.params.groupName);
+        await dbStore.deleteLearningPathGroup(groupName);
+        
+        res.json({
+            code: 200,
+            message: '分组删除成功'
+        });
+    } catch (error) {
+        console.error('删除分组失败:', error);
+        res.status(500).json({
+            code: 500,
+            message: error.message || '删除分组失败'
+        });
+    }
+});
+
+/**
  * 获取当前学习路径进度
  * GET /api/path/progress
  */
@@ -570,13 +605,53 @@ app.put('/api/path/progress/:id', authenticateToken, async (req, res) => {
 });
 
 /**
+ * 切换学习项目完成状态
+ * PUT /api/path/:id/toggle-item/:itemIndex
+ */
+app.put('/api/path/:id/toggle-item/:itemIndex', authenticateToken, async (req, res) => {
+    try {
+        const pathId = parseInt(req.params.id);
+        const itemIndex = parseInt(req.params.itemIndex);
+        
+        const path = await dbStore.getLearningPathById(pathId);
+        if (!path) {
+            return res.status(404).json({
+                code: 404,
+                message: '学习路径不存在'
+            });
+        }
+        
+        if (itemIndex < 0 || itemIndex >= path.items.length) {
+            return res.status(400).json({
+                code: 400,
+                message: '学习项目索引无效'
+            });
+        }
+
+        const updatedPath = await dbStore.toggleLearningPathItem(pathId, itemIndex);
+        
+        res.json({
+            code: 200,
+            message: '已更新学习项目状态',
+            data: updatedPath
+        });
+    } catch (error) {
+        console.error('更新学习项目失败:', error);
+        res.status(500).json({
+            code: 500,
+            message: '更新学习项目失败'
+        });
+    }
+});
+
+/**
  * 创建自定义学习路径
  * POST /api/path
  */
 app.post('/api/path', authenticateToken, async (req, res) => {
     try {
-        const { title, items, stage, status, progress } = req.body;
-        console.log('POST /api/path - Request body:', { title, items, stage, status, progress });
+        const { title, items, stage, status, progress, group_name } = req.body;
+        console.log('POST /api/path - Request body:', { title, items, stage, status, progress, group_name });
         
         if (!title || !title.trim()) {
             return res.status(400).json({
@@ -590,7 +665,8 @@ app.post('/api/path', authenticateToken, async (req, res) => {
             items: items || [],
             stage: stage !== undefined ? stage : 1,
             status: status || 'pending',
-            progress: progress !== undefined ? progress : 0
+            progress: progress !== undefined ? progress : 0,
+            group_name: group_name || '默认分组'
         });
         
         console.log('POST /api/path - Success, created:', newPath);
@@ -615,7 +691,7 @@ app.post('/api/path', authenticateToken, async (req, res) => {
 app.put('/api/path/:id', authenticateToken, async (req, res) => {
     try {
         const pathId = parseInt(req.params.id);
-        const { title, items, stage, status, progress } = req.body;
+        const { title, items, stage, status, progress, group_name } = req.body;
         
         const existingPath = await dbStore.getLearningPathById(pathId);
         if (!existingPath) {
@@ -630,7 +706,8 @@ app.put('/api/path/:id', authenticateToken, async (req, res) => {
             items,
             stage,
             status,
-            progress
+            progress,
+            group_name
         });
         
         res.json({
