@@ -36,7 +36,9 @@ function normalizeItems(items) {
  * @returns {boolean} - 是否为学习相关问题
  */
 function isLearningRelated(message) {
-    const lowerMsg = message.toLowerCase();
+    const lowerMsg = String(message || '').toLowerCase();
+
+    if (/(练习题|习题|题库|quiz|practice|刷题|题目)/i.test(lowerMsg)) return true;
     
     // 学习相关关键词
     const learningKeywords = [

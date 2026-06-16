@@ -514,23 +514,10 @@
                 <div class="mt-8 px-3">
                     <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
                         <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">最近学习</h3>
-                        <div class="space-y-3">
-                            <div class="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 cursor-pointer">
-                                <div class="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                                <span class="truncate">深度学习基础课程</span>
-                            </div>
-                            <div class="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 cursor-pointer">
-                                <div class="w-1.5 h-1.5 rounded-full bg-green-400"></div>
-                                <span class="truncate">React 实战进阶</span>
-                            </div>
-                        </div>
+                        <div id="sidebar-recent-learning" class="space-y-3"></div>
 
                         <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-6 mb-3">热门标签</h3>
-                        <div class="flex flex-wrap gap-2">
-                            <span class="px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-600 hover:border-blue-400 hover:text-blue-600 cursor-pointer transition-colors">#人工智能</span>
-                            <span class="px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-600 hover:border-blue-400 hover:text-blue-600 cursor-pointer transition-colors">#前端开发</span>
-                            <span class="px-2 py-1 bg-white border border-gray-200 rounded text-xs text-gray-600 hover:border-blue-400 hover:text-blue-600 cursor-pointer transition-colors">#UI设计</span>
-                        </div>
+                        <div id="sidebar-hot-tags" class="flex flex-wrap gap-2"></div>
                     </div>
                 </div>
             </nav>
@@ -606,11 +593,6 @@
                                 <i data-lucide="layout-grid" class="w-5 h-5 text-gray-700"></i>
                                 资源列表
                             </h2>
-                            <div class="flex bg-white rounded-lg border border-gray-200 p-1">
-                                <button class="px-3 py-1 bg-gray-100 rounded-md text-sm font-medium">全部</button>
-                                <button class="px-3 py-1 text-sm font-medium text-gray-500 hover:text-gray-700">视频</button>
-                                <button class="px-3 py-1 text-sm font-medium text-gray-500 hover:text-gray-700">文档</button>
-                            </div>
                         </div>
                         <div id="resource-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             <!-- Resources will be rendered here by JavaScript -->
@@ -806,13 +788,7 @@
                          </div>
                      </div>
 
-                     <div class="flex gap-4 mb-8 overflow-x-auto pb-2 no-scrollbar">
-                         <button onclick="filterResources('all')" class="resource-filter px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold shadow-md shadow-blue-100" data-category="all">全部</button>
-                         <button onclick="filterResources('编程开发')" class="resource-filter px-6 py-2 bg-white border border-gray-200 text-gray-600 rounded-full text-sm font-medium hover:border-blue-500 hover:text-blue-600 transition-colors" data-category="编程开发">视频课程</button>
-                         <button onclick="filterResources('AI 技术')" class="resource-filter px-6 py-2 bg-white border border-gray-200 text-gray-600 rounded-full text-sm font-medium hover:border-blue-500 hover:text-blue-600 transition-colors" data-category="AI 技术">电子书</button>
-                         <button onclick="filterResources('设计美学')" class="resource-filter px-6 py-2 bg-white border border-gray-200 text-gray-600 rounded-full text-sm font-medium hover:border-blue-500 hover:text-blue-600 transition-colors" data-category="设计美学">实战项目</button>
-                         <button onclick="filterResources('后端技术')" class="resource-filter px-6 py-2 bg-white border border-gray-200 text-gray-600 rounded-full text-sm font-medium hover:border-blue-500 hover:text-blue-600 transition-colors" data-category="后端技术">工具资源</button>
-                     </div>
+                    <div id="library-filter-bar" class="flex flex-nowrap items-center gap-3 mb-8 overflow-x-auto pb-2 no-scrollbar"></div>
 
                      <div id="library-resource-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                          <!-- Resources will be rendered by JS -->
@@ -993,64 +969,12 @@
                      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                          <section>
                              <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">最近学习的内容</h3>
-                             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
-                                 <div class="p-4 flex items-center gap-4 hover:bg-gray-50 cursor-pointer transition-colors">
-                                     <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
-                                         <i data-lucide="play" class="w-5 h-5"></i>
-                                     </div>
-                                     <div class="flex-1">
-                                         <p class="text-sm font-bold">React Context API 实战</p>
-                                         <p class="text-[10px] text-gray-400">继续上次：15:20 / 45:00</p>
-                                     </div>
-                                     <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
-                                 </div>
-                                 <div class="p-4 flex items-center gap-4 hover:bg-gray-50 cursor-pointer transition-colors">
-                                     <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
-                                         <i data-lucide="file-text" class="w-5 h-5"></i>
-                                     </div>
-                                     <div class="flex-1">
-                                         <p class="text-sm font-bold">Tailwind CSS 最佳实践指南</p>
-                                         <p class="text-[10px] text-gray-400">上次阅读：2小时前</p>
-                                     </div>
-                                     <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
-                                 </div>
-                                 <div class="p-4 flex items-center gap-4 hover:bg-gray-50 cursor-pointer transition-colors">
-                                     <div class="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600">
-                                         <i data-lucide="code" class="w-5 h-5"></i>
-                                     </div>
-                                     <div class="flex-1">
-                                         <p class="text-sm font-bold">Next.js 14 服务端组件演示</p>
-                                         <p class="text-[10px] text-gray-400">上次打开：昨天</p>
-                                     </div>
-                                     <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
-                                 </div>
-                             </div>
+                             <div id="quick-access-recent-list" class="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50"></div>
                          </section>
 
                          <section>
                              <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">关注的标签</h3>
-                             <div class="flex flex-wrap gap-3">
-                                 <div class="px-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-3 hover:border-blue-500 hover:text-blue-600 cursor-pointer transition-all">
-                                     <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                                     <span class="text-sm font-medium">#前端框架</span>
-                                 </div>
-                                 <div class="px-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-3 hover:border-blue-500 hover:text-blue-600 cursor-pointer transition-all">
-                                     <span class="w-2 h-2 rounded-full bg-purple-500"></span>
-                                     <span class="text-sm font-medium">#人工智能</span>
-                                 </div>
-                                 <div class="px-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-3 hover:border-blue-500 hover:text-blue-600 cursor-pointer transition-all">
-                                     <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                                     <span class="text-sm font-medium">#UI设计</span>
-                                 </div>
-                                 <div class="px-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-3 hover:border-blue-500 hover:text-blue-600 cursor-pointer transition-all">
-                                     <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                                     <span class="text-sm font-medium">#后端架构</span>
-                                 </div>
-                                 <div class="px-4 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-3 hover:border-blue-500 hover:text-blue-600 cursor-pointer transition-all">
-                                     <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                                     <span class="text-sm font-medium">#网络安全</span>
-                                 </div>
-                             </div>
+                             <div id="quick-access-tags" class="flex flex-wrap gap-3"></div>
                          </section>
                      </div>
                  </div>
@@ -1364,6 +1288,57 @@
                       <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">保存</button>
                   </div>
               </form>
+          </div>
+      </div>
+
+      <div id="learning-path-detail-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50" onclick="closeLearningPathDetailModal(event)">
+          <div class="w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden mx-4" onclick="event.stopPropagation()">
+              <div class="px-6 py-5 border-b border-gray-100 flex items-start justify-between gap-4">
+                  <div class="min-w-0">
+                      <div class="flex items-center gap-2 text-xs text-blue-600 font-bold uppercase tracking-wider">
+                          <span id="learning-path-detail-stage">阶段</span>
+                          <span id="learning-path-detail-status" class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700"></span>
+                      </div>
+                      <h3 id="learning-path-detail-title" class="text-xl font-bold text-gray-900 truncate mt-2">学习路径详情</h3>
+                      <p id="learning-path-detail-summary" class="text-sm text-gray-500 mt-1">学习进度</p>
+                  </div>
+                  <button onclick="closeLearningPathDetailModal()" class="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0">
+                      <i data-lucide="x" class="w-5 h-5"></i>
+                  </button>
+              </div>
+              <div class="p-6">
+                  <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                      <div class="flex items-center justify-between gap-4">
+                          <div class="min-w-0">
+                              <p class="text-sm text-gray-500">当前进度</p>
+                              <p class="text-lg font-bold text-gray-900 mt-1"><span id="learning-path-detail-progress">0</span>%</p>
+                          </div>
+                          <div class="flex-1">
+                              <div class="h-3 bg-white rounded-full overflow-hidden border border-gray-100">
+                                  <div id="learning-path-detail-progress-bar" class="h-full bg-blue-600 rounded-full" style="width: 0%"></div>
+                              </div>
+                              <p id="learning-path-detail-next" class="text-sm text-gray-600 mt-3 truncate"></p>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="mt-6">
+                      <div class="flex items-center justify-between mb-3">
+                          <h4 class="font-bold text-gray-900 flex items-center gap-2">
+                              <i data-lucide="list-checks" class="w-5 h-5 text-gray-600"></i>
+                              学习清单
+                          </h4>
+                          <span id="learning-path-detail-count" class="text-xs text-gray-400"></span>
+                      </div>
+                      <div id="learning-path-detail-items" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                      <p id="learning-path-detail-empty" class="hidden text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-2xl p-4">暂无学习项目</p>
+                  </div>
+
+                  <div class="mt-8 flex flex-col sm:flex-row gap-3 sm:justify-end">
+                      <button onclick="jumpToResourceLibrary()" class="px-5 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors">去资源库找相关内容</button>
+                      <button id="learning-path-detail-continue" onclick="continueCurrentPath()" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors">继续学习</button>
+                  </div>
+              </div>
           </div>
       </div>
       

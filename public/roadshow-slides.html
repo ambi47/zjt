@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>智荐通｜路演PPT截图版</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: #ffffff;
+        --ink: #0f172a;
+        --muted: #475569;
+        --line: #e2e8f0;
+        --brand: #2563eb;
+        --brand2: #4f46e5;
+        --soft: #eff6ff;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; overflow: hidden; }
+      .wrap { min-height: 100vh; position: relative; padding: 20px; overflow: hidden; }
+      .deck { width: 1280px; position: absolute; left: 50%; top: 50%; transform-origin: center center; }
+      .slide {
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: var(--panel);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 30px 80px rgba(0,0,0,.35);
+        border: 1px solid rgba(148,163,184,.25);
+        display: none;
+      }
+      .slide.active { display: grid; grid-template-rows: 84px 1fr 64px; }
+      .topbar {
+        padding: 24px 34px 14px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+      }
+      .title { font-size: 34px; font-weight: 900; color: var(--ink); letter-spacing: .5px; }
+      .subtitle { font-size: 14px; color: var(--muted); margin-top: 6px; }
+      .brand-tag {
+        background: linear-gradient(135deg, var(--brand), var(--brand2));
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 12px;
+        letter-spacing: .6px;
+        white-space: nowrap;
+      }
+      .content { padding: 28px 34px 18px; display: grid; gap: 18px; }
+      .grid-2 { display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; }
+      .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 16px 16px 14px;
+        background: #fff;
+      }
+      .card.soft { background: var(--soft); border-color: rgba(37,99,235,.18); }
+      .card h3 { margin: 0 0 10px; font-size: 18px; color: var(--ink); }
+      .card p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--muted); }
+      .bullets { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; line-height: 1.75; }
+      .bullets li { margin: 6px 0; }
+      .big-number {
+        font-size: 38px;
+        font-weight: 900;
+        color: var(--brand);
+        line-height: 1;
+        letter-spacing: .4px;
+      }
+      .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .kpi { border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: #fff; }
+      .kpi .label { font-size: 12px; color: var(--muted); margin-top: 6px; }
+      .shot {
+        border: 1px dashed rgba(100,116,139,.55);
+        border-radius: 16px;
+        padding: 14px;
+        color: rgba(100,116,139,.95);
+        background: rgba(248,250,252,.65);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+      .shot img { width: 100%; height: 100%; display: block; border-radius: 12px; background: #fff; object-fit: cover; }
+      .shot.dual { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: stretch; }
+      .shot.dual img { object-fit: contain; background: #fff; }
+      .shot-caption { margin-top: 10px; font-size: 12px; color: rgba(100,116,139,.95); }
+      .footer {
+        border-top: 1px solid var(--line);
+        padding: 12px 34px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: rgba(100,116,139,.9);
+        font-size: 12px;
+      }
+      .navhint { color: rgba(100,116,139,.9); }
+      .pager { font-weight: 700; color: rgba(15,23,42,.75); }
+      .cover {
+        background: radial-gradient(1200px 500px at 10% 10%, rgba(37,99,235,.22), transparent 55%),
+          radial-gradient(900px 500px at 90% 20%, rgba(79,70,229,.20), transparent 60%),
+          linear-gradient(180deg, #ffffff, #f8fafc);
+      }
+      .cover .content { display: grid; align-content: center; gap: 16px; padding-top: 6px; }
+      .cover h1 { margin: 0; font-size: 56px; color: var(--ink); letter-spacing: 1px; }
+      .cover .tagline { font-size: 18px; color: var(--muted); line-height: 1.7; max-width: 900px; }
+      .cover .meta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+      .pill { border: 1px solid rgba(148,163,184,.65); padding: 10px 14px; border-radius: 999px; background: rgba(255,255,255,.7); color: var(--ink); font-size: 13px; font-weight: 700; }
+      .accent { color: var(--brand); font-weight: 800; }
+      .muted { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="deck" id="deck">
+        <section class="slide cover active" data-title="封面">
+          <div class="topbar">
+            <div>
+              <div class="title">智荐通</div>
+              <div class="subtitle">资源库 + 学习路径 + DeepSeek AI 学习助理｜课程项目路演</div>
+            </div>
+            <div class="brand-tag">Roadshow</div>
+          </div>
+          <div class="content">
+            <h1>做一个真正能学的“学习平替”平台</h1>
+            <div class="tagline">
+              面向软件学习场景：把碎片化资源整理成可学的内容，把学习路径做成可跟踪的进度，再用 AI 把“答疑、出题、推荐、计划”串起来。
+            </div>
+            <div class="meta">
+              <div class="pill">课程：Web 应用开发</div>
+              <div class="pill">小组：4 人协作</div>
+              <div class="pill">技术栈：原生 JS + Tailwind + Node/Express + SQLite + DeepSeek</div>
+              <div class="pill">日期：_____ / _____</div>
+            </div>
+            <div class="shot">
+              <img src="/roadshow-shots/01-dashboard.png" alt="智荐通 页面截图" />
+              <div class="shot-caption">截图说明：发现中心（展示侧边栏、资源列表与整体风格）。</div>
+            </div>
+          </div>
+          <div class="footer">
+            <div class="navhint">←/→ 翻页 · 直接截图这一页当封面</div>
+            <div class="pager">1 / 10</div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="背景">
+          <div class="topbar">
+            <div>
+              <div class="title">选题背景与意义</div>
+              <div class="subtitle">一句话痛点 + 一句话目标 + 一句话价值（老师建议一页就够）</div>
+            </div>
+            <div class="brand-tag">背景</div>
+          </div>
+          <div class="content">
+            <div class="grid-3">
+              <div class="card">
+                <h3>痛点：资源多但难学</h3>
+                <ul class="bullets">
+                  <li>资料太多，筛选成本高</li>
+                  <li>学到哪了不清楚，容易中断</li>
+                  <li>通用 AI 不懂你的课程库和学习进度</li>
+                </ul>
+              </div>
+              <div class="card soft">
+                <h3>目标：做一体化学习平替</h3>
+                <ul class="bullets">
+                  <li>资源库：真实可学内容（链接 + 大纲）</li>
+                  <li>学习路径：阶段化拆解 + 进度追踪</li>
+                  <li>AI 助理：答疑/推荐/出题/计划</li>
+                </ul>
+              </div>
+              <div class="card">
+                <h3>价值：更省心、更可持续</h3>
+                <ul class="bullets">
+                  <li>减少“找资料”的时间</li>
+                  <li>把学习过程变成可执行的步骤</li>
+                  <li>把 AI 变成“懂你数据”的学习助手</li>
+                </ul>
+              </div>
+            </div>
+            <div class="shot">
+              <img src="/roadshow-shots/01-dashboard.png" alt="发现中心截图" />
+              <div class="shot-caption">可在模板里用箭头标注：资源中心 / 学习路径 / 智能助理。</div>
+            </div>
+          </div>
+          <div class="footer">
+            <div class="navhint">讲法：30 秒讲完，别铺太多字</div>
+            <div class="pager">2 / 10</div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="分工">
+          <div class="topbar">
+            <div>
+              <div class="title">团队介绍与分工</div>
+              <div class="subtitle">建议一页：谁负责什么 + 有哪些可展示的产出</div>
+            </div>
+            <div class="brand-tag">团队</div>
+          </div>
+          <div class="content">
+            <div class="grid-2">
+              <div class="card">
+                <h3>分工（按模块）</h3>
+                <ul class="bullets">
+                  <li>成员 A（前端）：资源库、学习路径交互、快速访问、UI 统一风格</li>
+                  <li>成员 B（后端）：Express API、鉴权与安全、推荐接口、AI 代理接口</li>
+                  <li>成员 C（数据库）：SQLite(sql.js) 表结构、初始化与种子数据、字段扩展</li>
+                  <li>成员 D（AI）：DeepSeek 接入、提示词规则、练习题/计划/推荐能力迭代</li>
+                </ul>
+              </div>
+              <div class="card soft">
+                <h3>协作方式</h3>
+                <ul class="bullets">
+                  <li>GitHub 协作：分支/拉取、冲突处理、代码同步</li>
+                  <li>接口先行：前后端按 API 对齐联调</li>
+                  <li>每周迭代：功能可用 → 体验优化 → AI 能力完善</li>
+                </ul>
+                <div class="shot" style="margin-top:12px;">把成员 A/B/C/D 替换成真实姓名与分工即可。</div>
+              </div>
+            </div>
+          </div>
+          <div class="footer">
+            <div class="navhint">讲法：每人一句话，最后强调“对齐 API 联调”</div>
+            <div class="pager">3 / 10</div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="架构">
+          <div class="topbar">
+            <div>
+              <div class="title">系统整体架构</div>
+              <div class="subtitle">前端 SPA + 后端 API + 数据库 + DeepSeek（通过后端代理）</div>
+            </div>
+            <div class="brand-tag">架构</div>
+          </div>
+          <div class="content">
+            <div class="kpi-row">
+              <div class="kpi">
+                <div class="big-number">SPA</div>
+                <div class="label">原生 JavaScript + Tailwind + Lucide</div>
+              </div>
+              <div class="kpi">
+                <div class="big-number">API</div>
+                <div class="label">Node.js + Express · JWT 鉴权</div>
+              </div>
+              <div class="kpi">
+                <div class="big-number">DB</div>
+                <div class="label">SQLite（sql.js）· 初始化种子数据</div>
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="card">
+                <h3>数据流（讲清楚即可）</h3>
+                <ul class="bullets">
+                  <li>登录后前端携带 Token 调用 API</li>
+                  <li>资源/路径/推荐从 SQLite 读取</li>
+                  <li>AI：后端拼接用户学习上下文 → 调用 DeepSeek → 返回纯文本</li>
+                </ul>
+              </div>
+              <div class="shot">
+                <img src="/roadshow-shots/06-recommend.png" alt="智能推荐截图" />
+                <div class="shot-caption">截图说明：智能推荐页（用于讲“前端→后端→数据库/AI”的数据流与落地效果）。</div>
+              </div>
+            </div>
+          </div>
+          <div class="footer">
+            <div class="navhint">讲法：强调“DeepSeek 不直连前端，走后端代理更安全”</div>
+            <div class="pager">4 / 10</div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="资源库">
+          <div class="topbar">
+            <div>
+              <div class="title">核心功能一：资源库（可学的内容）</div>
+              <div class="subtitle">不是摆设：每条资源有真实链接 + 学习大纲 + 可点击详情</div>
+            </div>
+            <div class="brand-tag">功能</div>
+          </div>
+          <div class="content">
+            <div class="grid-2">
+              <div class="card">
+                <h3>我们做到了什么</h3>
+                <ul class="bullets">
+                  <li>资源规模：100+（目前 120 条）</li>
+                  <li>每条资源：标题/分类/提供方/学习时长/链接/大纲</li>
+                  <li>分类筛选：按真实数据动态生成，避免“假分类”</li>
+                  <li>封面统一：自动生成 SVG 图案，每条不重复</li>
+                </ul>
+              </div>
+              <div class="shot dual">
+                <img src="/roadshow-shots/02-library.png" alt="资源库截图" />
+                <img src="/roadshow-shots/03-resource-modal.png" alt="资源详情弹窗截图" />
+              </div>
+            </div>
+          </div>
+          <div class="footer">
+            <div class="navhint">讲法：强调“可点击、可学习”，别只讲 UI</div>
+            <div class="pager">5 / 10</div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="学习路径">
+          <div class="topbar">
+            <div>
+              <div class="title">核心功能二：学习路径（阶段 + 进度）</div>
+              <div class="subtitle">把“学什么、学到哪”做成可视化，并能直达对应资源</div>
+            </div>
+            <div class="brand-tag">功能</div>
+          </div>
+          <div class="content">
+            <div class="grid-2">
+              <div class="card">
+                <h3>交互亮点</h3>
+                <ul class="bullets">
+                  <li>阶段化展示：每条路径拆成多个学习条目</li>
+                  <li>进度映射：进度百分比映射到“已学/正在学/待学”</li>
+                  <li>点击条目：直接打开最匹配的具体资源（比如状态管理 → React 状态管理进阶）</li>
+                  <li>详情弹窗：提示下一步学什么 + 一键继续学习</li>
+                </ul>
+              </div>
+              <div class="shot dual">
+                <img src="/roadshow-shots/04-learning-paths.png" alt="学习路径截图" />
+                <img src="/roadshow-shots/05-path-progress-modal.png" alt="学习路径进度弹窗截图" />
+              </div>
+            </div>
+          </div>
+          <div class="footer">
+            <div class="navhint">讲法：把“可执行”说清楚：点一下就能继续学</div>
+            <div class="pager">6 / 10</div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="推荐与快速访问">
+          <div class="topbar">
+            <div>
+              <div class="title">核心功能三：智能推荐 + 快速访问</div>
+              <div class="subtitle">兴趣标签驱动推荐，最近学习可追溯、可跳转</div>
+            </div>
+            <div class="brand-tag">功能</div>
+          </div>
+          <div class="content">
+            <div class="grid-2">
+              <div class="card">
+                <h3>推荐逻辑（不夸张，讲清楚即可）</h3>
+                <ul class="bullets">
+                  <li>注册时填写兴趣标签</li>
+                  <li>后端按兴趣与资源标题/分类/描述匹配，返回 3–4 条可点推荐</li>
+                  <li>猜你喜欢同样来自真实资源库，点击能进详情</li>
+                </ul>
+              </div>
+              <div class="card soft">
+                <h3>快速访问（更像真实产品）</h3>
+                <ul class="bullets">
+                  <li>最近学习：记录你点击过的资源，重新登录也能继续</li>
+                  <li>关注标签：点击标签直接跳到相关资源</li>
+                </ul>
+              </div>
+            </div>
+            <div class="shot dual">
+              <img src="/roadshow-shots/06-recommend.png" alt="智能推荐截图" />
+              <img src="/roadshow-shots/07-quick-access.png" alt="快速访问截图" />
+            </div>
+          </div>
+          <div class="footer">
+            <div class="navhint">讲法：强调“点击能动、不是摆设”</div>
+            <div class="pager">7 / 10</div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="AI实现">
+          <div class="topbar">
+            <div>
+              <div class="title">AI 功能实现（DeepSeek）</div>
+              <div class="subtitle">不是简单聊天：结合学习数据上下文 + 学习范围约束 + 出题/计划流程</div>
+            </div>
+            <div class="brand-tag">AI</div>
+          </div>
+          <div class="content">
+            <div class="grid-2">
+              <div class="card">
+                <h3>实现流程</h3>
+                <ul class="bullets">
+                  <li>前端请求：/api/ai-assistant/chat</li>
+                  <li>后端组装上下文：用户兴趣 + 学习路径 + 资源库</li>
+                  <li>调用 DeepSeek：返回纯文本，前端做轻量格式整理</li>
+                  <li>学习任务：可按当前学习主题生成练习题，也可结合路径与资源生成学习计划</li>
+                </ul>
+              </div>
+              <div class="shot dual">
+                <img src="/roadshow-shots/08-ai-quiz.png" alt="AI 练习题生成截图" />
+                <img src="/roadshow-shots/09-ai-answers.png" alt="AI 学习计划生成截图" />
+              </div>
+            </div>
+          </div>
+          <div class="footer">
+            <div class="navhint">讲法：强调“AI 读得懂平台数据”，不是纯外部问答</div>
+            <div class="pager">8 / 10</div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="过程对比">
+          <div class="topbar">
+            <div>
+              <div class="title">过程复盘：我们怎么把功能做“能用”</div>
+              <div class="subtitle">老师最爱看：发现问题 → 定位原因 → 修复验证（体现工程能力与用 AI 辅助迭代）</div>
+            </div>
+            <div class="brand-tag">复盘</div>
+          </div>
+          <div class="content">
+            <div class="grid-3">
+              <div class="card">
+                <h3>从“像”到“能用”</h3>
+                <p>资源库不再是摆设：补齐真实链接与大纲，点击能学习。</p>
+              </div>
+              <div class="card soft">
+                <h3>从“撞脸”到“统一”</h3>
+                <p>封面统一 SVG 图案生成，风格一致且每条不重复。</p>
+              </div>
+              <div class="card">
+                <h3>AI 迭代</h3>
+                <p>限制学习范围的同时，保留练习题/计划/推荐等学习任务可用。</p>
+              </div>
+            </div>
+            <div class="shot dual">
+              <img src="/roadshow-shots/08-ai-quiz.png" alt="按当前学习主题生成练习题" />
+              <img src="/roadshow-shots/09-ai-answers.png" alt="结合学习路径生成学习计划" />
+            </div>
+          </div>
+          <div class="footer">
+            <div class="navhint">讲法：用 3 个“我们遇到…后来…”的句子讲完</div>
+            <div class="pager">9 / 10</div>
+          </div>
+        </section>
+
+        <section class="slide" data-title="总结展望">
+          <div class="topbar">
+            <div>
+              <div class="title">总结与展望</div>
+              <div class="subtitle">对 AI 工具与功能实现的体会 + 下一步怎么做得更像产品</div>
+            </div>
+            <div class="brand-tag">总结</div>
+          </div>
+          <div class="content">
+            <div class="grid-2">
+              <div class="card">
+                <h3>我们的体会（不生硬，讲真实）</h3>
+                <ul class="bullets">
+                  <li>AI 很强，但要“喂对上下文”和“给清楚规则”，才稳定可控</li>
+                  <li>做产品体验比做页面更难：能点、能学、能继续才算完成</li>
+                  <li>用 AI 辅助定位问题、改提示词、做迭代，比直接“堆功能”更有效</li>
+                </ul>
+              </div>
+              <div class="card soft">
+                <h3>后续可以怎么完善</h3>
+                <ul class="bullets">
+                  <li>学习记录后端持久化：多端同步，支持更真实的推荐</li>
+                  <li>错题本与判题：练习题可作答、自动反馈与统计</li>
+                  <li>更细的推荐算法：结合点击/进度/兴趣动态调整</li>
+                </ul>
+              </div>
+            </div>
+            <div class="shot">
+              <img src="/roadshow-shots/02-library.png" alt="资源库展示" />
+              <div class="shot-caption">结束语建议：一句话总结“资源 + 路径 + AI，让学习过程更省心、更可持续”。</div>
+            </div>
+          </div>
+          <div class="footer">
+            <div class="navhint">讲法：30 秒，总结 1 句 + 展望 3 点</div>
+            <div class="pager">10 / 10</div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const DESIGN_WIDTH = 1280;
+        const DESIGN_HEIGHT = 720;
+        const VIEWPORT_PADDING = 40;
+        const deck = document.getElementById('deck');
+        const slides = Array.from(document.querySelectorAll('.slide'));
+        let index = 0;
+        const fitDeck = () => {
+          if (!deck) return;
+          const scale = Math.min(
+            (window.innerWidth - VIEWPORT_PADDING) / DESIGN_WIDTH,
+            (window.innerHeight - VIEWPORT_PADDING) / DESIGN_HEIGHT,
+            1
+          );
+          deck.style.transform = `translate(-50%, -50%) scale(${Math.max(scale, 0.1)})`;
+        };
+        const show = (i) => {
+          index = Math.max(0, Math.min(slides.length - 1, i));
+          slides.forEach((s, idx) => s.classList.toggle('active', idx === index));
+          const pager = slides[index].querySelector('.pager');
+          if (pager) pager.textContent = `${index + 1} / ${slides.length}`;
+        };
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') show(index + 1);
+          if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(index - 1);
+          if (e.key === 'Home') show(0);
+          if (e.key === 'End') show(slides.length - 1);
+        });
+        window.addEventListener('resize', fitDeck);
+        fitDeck();
+        show(0);
+      })();
+    </script>
+  </body>
+</html>
